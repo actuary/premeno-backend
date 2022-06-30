@@ -13,4 +13,4 @@ class BreastCancerRiskViewSet(viewsets.ViewSet):
         Return breast cancer
         """
         print(request.data)
-        return Response({"baseline_risk": 0.102, "relative_risk": 2.00})
+        return Response({"baseline_risk": 0.05, "relative_risk": 2})

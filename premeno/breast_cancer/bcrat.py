@@ -1,5 +1,7 @@
 import math
+import pickle
 from dataclasses import dataclass
+from itertools import product
 from typing import Optional
 
 import numpy as np
@@ -151,6 +153,18 @@ def recode_age(age):
     return age
 
 
+def recode_T1(T1, T2):
+    if T1 < 20 or T1 >= 90 or T1 >= T2:
+        return None
+    return T1
+
+
+def recode_T2(T1, T2):
+    if T2 > 90 or T1 >= T2:
+        return None
+    return T2
+
+
 def char_race(Race):
     CharRace = "??"
 
@@ -183,6 +197,7 @@ class BCRAT_Factors:
     AF_Cat: Optional[int]
     NR_Cat: Optional[int]
     R_Hyp: Optional[float]
+    HypPlas: Optional[float]
     Race: Optional[int]
 
     @property
@@ -195,22 +210,35 @@ class BCRAT_Factors:
             and self.AF_Cat is not None
             and self.NR_Cat is not None
             and self.R_Hyp is not None
+            and self.HypPlas is not None
             and self.Race is not None
             and self.T2 > self.T1
         )
 
+    @property
+    def to_csv_row(self) -> str:
+        return f"{self.T1},{self.T2},{self.NB_Cat},{self.AM_Cat},{self.AF_Cat},{self.NR_Cat},{self.R_Hyp},{self.HypPlas},{self.Race},{self.is_valid}\n"
+
+
+def recode_HypPlas(HypPlas, NB_Cat):
+    if NB_Cat is None or HypPlas is None:
+        return None
+
+    return HypPlas
+
 
 def recode_check_v2(data):
-    T1 = recode_age(data.T1)
-    T2 = recode_age(data.T2)
+    T1 = recode_T1(data.T1, data.T2)
+    T2 = recode_T2(data.T1, data.T2)
     NB_Cat = recode_N_Biop(data.N_Biop, data.HypPlas, data.Race)
     AM_Cat = recode_age_men(data.AgeMen, data.T1, data.Race)
     AF_Cat = recode_age_1st(data.Age1st, data.AgeMen, data.T1, data.Race)
     NR_Cat = recode_N_rel(data.N_Rels, data.Race)
+    HypPlas = recode_HypPlas(data.HypPlas, NB_Cat)
     R_Hyp = get_RR_factor(data.HypPlas, NB_Cat)
     Race = recode_race(data.Race)
 
-    return BCRAT_Factors(T1, T2, NB_Cat, AM_Cat, AF_Cat, NR_Cat, R_Hyp, Race)
+    return BCRAT_Factors(T1, T2, NB_Cat, AM_Cat, AF_Cat, NR_Cat, R_Hyp, HypPlas, Race)
 
 
 # Make sure my version of NB_Cat is correct
@@ -219,9 +247,9 @@ def recode_check(data, Raw_Ind=1):
     ## if mean not 0, implies ERROR in file
     Error_Ind = np.zeros(data.shape[0])
     ### test for consistency of T1 (initial age) and T2 (projection age)
-    set_T1_missing = data.T1.values.copy()
+    set_T1_missing = data.T1.values.copy().astype(float)
 
-    set_T2_missing = data.T2.values.copy()
+    set_T2_missing = data.T2.values.copy().astype(float)
     set_T1_missing[
         np.where((data.T1 < 20) | (data.T1 >= 90) | (data.T1 >= data.T2))
     ] = np.nan
@@ -236,15 +264,19 @@ def recode_check(data, Raw_Ind=1):
         NB_Cat = np.repeat(-1.0, data.shape[0])
 
         ## REQUIREMENT (A)
-        NB_Cat[((data.N_Biop == 0) | (data.N_Biop == 99)) & (data.HypPlas != 99)] = -100
-        Error_Ind[np.where(NB_Cat == -100)] = 1
+        NB_Cat[
+            ((data.N_Biop == 0) | (data.N_Biop == 99)) & (data.HypPlas != 99)
+        ] = np.nan
+
+        Error_Ind[np.isnan(NB_Cat)] = 1
 
         ## REQUIREMENT (B)
         NB_Cat[
             ((data.N_Biop > 0) & (data.N_Biop < 99))
             & ((data.HypPlas != 0) & (data.HypPlas != 1) & (data.HypPlas != 99))
-        ] = -200
-        Error_Ind[NB_Cat == -200] = 1
+        ] = np.nan
+
+        Error_Ind[np.isnan(NB_Cat)] = 1
 
         ### editing and recoding for N_Biop
         NB_Cat[(NB_Cat == -1) & ((data.N_Biop == 0) | (data.N_Biop == 99))] = 0
@@ -294,27 +326,25 @@ def recode_check(data, Raw_Ind=1):
     ### setting RR multiplicative factor for atypical hyperplasia
     R_Hyp = np.repeat(np.nan, data.shape[0])
     R_Hyp[NB_Cat == 0] = 1.00
-    R_Hyp[((NB_Cat != -100) & (NB_Cat > 0)) & (data.HypPlas == 0)] = 0.93
-    R_Hyp[((NB_Cat != -100) & (NB_Cat > 0)) & (data.HypPlas == 1)] = 1.82
-    R_Hyp[((NB_Cat != -100) & (NB_Cat > 0)) & (data.HypPlas == 99)] = 1.00
+    R_Hyp[(~np.isnan(NB_Cat) & (NB_Cat > 0)) & (data.HypPlas == 0)] = 0.93
+    R_Hyp[(~np.isnan(NB_Cat) & (NB_Cat > 0)) & (data.HypPlas == 1)] = 1.82
+    R_Hyp[(~np.isnan(NB_Cat) & (NB_Cat > 0)) & (data.HypPlas == 99)] = 1.00
 
-    set_HyperP_missing = data.HypPlas.values
-    set_R_Hyp_missing = R_Hyp.copy()
-    set_HyperP_missing[NB_Cat == -100] = -100
-    set_R_Hyp_missing[NB_Cat == -100] = -100
-    set_HyperP_missing[NB_Cat == -200] = -200
-    set_R_Hyp_missing[NB_Cat == -200] = -200
+    set_HyperP_missing = data.HypPlas.values.astype(float)
+    set_R_Hyp_missing = R_Hyp.copy().astype(float)
+    set_HyperP_missing[np.isnan(NB_Cat)] = np.nan
+    set_R_Hyp_missing[np.isnan(NB_Cat)] = np.nan
 
-    set_Race_missing = data.Race.values
+    set_Race_missing = data.Race.values.astype(float)
     Race_range = np.array(range(1, 12))
-    set_Race_missing[-data.Race.isin(Race_range)] = -300
+    set_Race_missing[-data.Race.isin(Race_range)] = np.nan
 
     Error_Ind[
         (np.isnan(NB_Cat))
         | (np.isnan(AM_Cat))
         | (np.isnan(AF_Cat))
         | (np.isnan(NR_Cat))
-        | (set_Race_missing == -300)
+        | (np.isnan(set_Race_missing))
     ] = 1
 
     ### african-american RR model from CARE study:(1) eliminates Age1st from model;(2) groups AgeMen=2 with AgeMen=1;
@@ -353,7 +383,6 @@ def recode_check(data, Raw_Ind=1):
     CharRace[data.Race == 10] = "oP"  # other pacific islander
     CharRace[data.Race == 11] = "oA"  # other asian
 
-    #     recode_check= cbind(Error_Ind, set_T1_missing, set_T2_missing, NB_Cat, AM_Cat, AF_Cat, NR_Cat, R_Hyp, set_HyperP_missing, set_R_Hyp_missing, set_Race_missing, CharRace)
     recode_check = pd.DataFrame(
         {
             "Error_Ind": Error_Ind,
@@ -364,7 +393,7 @@ def recode_check(data, Raw_Ind=1):
             "AF_Cat": AF_Cat,
             "NR_Cat": NR_Cat,
             "R_Hyp_A": R_Hyp,
-            "set_HyperP_missing": set_HyperP_missing,
+            "HypPlas": set_HyperP_missing,
             "R_Hyp": set_R_Hyp_missing,
             "Race": set_Race_missing,
             "CharRace": CharRace,
@@ -470,16 +499,207 @@ def compare_values(v1, v2):
         print("Race differ: v1=" + str(v1.Race) + ", v2=" + str(v2.Race))
 
 
+def replace_in_file(to_read, to_save, to_replace, replacement):
+    with open(to_read) as file_read:
+        with open(to_save, "w") as file_write:
+            file_write.write(file_read.read().replace(to_replace, replacement))
+
+
+def coerce_to_float(val):
+    if val == "None":
+        return None
+    else:
+        return float(val)
+
+
+def compare_row(v1, v2):
+    if not v1[1].is_valid and v2[1].Error_Ind == 1:
+        return False
+
+    if str(v1[1].NB_Cat) != str(v2[1].NB_Cat):
+        print(
+            "NB_Cats differ: v1[1]="
+            + str(v1[1].NB_Cat)
+            + ", v2[1]="
+            + str(v2[1].NB_Cat)
+        )
+    if str(v1[1].AM_Cat) != str(v2[1].AM_Cat):
+        print(
+            "AM_Cats differ: v1[1]="
+            + str(v1[1].AM_Cat)
+            + ", v2[1]="
+            + str(v2[1].AM_Cat)
+        )
+    if str(v1[1].AF_Cat) != str(v2[1].AF_Cat):
+        print(
+            "AF_Cats differ: v1[1]="
+            + str(v1[1].AF_Cat)
+            + ", v2[1]="
+            + str(v2[1].AF_Cat)
+        )
+    if str(v1[1].NR_Cat) != str(v2[1].NR_Cat):
+        print(
+            "NR_Cats differ: v1[1]="
+            + str(v1[1].NR_Cat)
+            + ", v2[1]="
+            + str(v2[1].NR_Cat)
+        )
+    if coerce_to_float(v1[1].R_Hyp) != coerce_to_float(v2[1].R_Hyp):
+        print("R_Hyp differ: v1[1]=" + str(v1[1].R_Hyp) + ", v2[1]=" + str(v2[1].R_Hyp))
+    if v1[1].Race != v2[1].Race:
+        print("Race differ: v1[1]=" + str(v1[1].Race) + ", v2[1]=" + str(v2[1].Race))
+    return (
+        v1[1].T1 != v2[1].T1
+        or v1[1].T2 != v2[1].T2
+        or v1[1].NB_Cat != v2[1].NB_Cat
+        or v1[1].AM_Cat != v2[1].AM_Cat
+        or v1[1].AF_Cat != v2[1].AF_Cat
+        or v1[1].NR_Cat != v2[1].NR_Cat
+        or coerce_to_float(v1[1].R_Hyp) != coerce_to_float(v2[1].R_Hyp)
+        or v1[1].Race != v2[1].Race
+    ) and not (v2[1].T1 == "None" and v2[1].T2 == "None")
+
+
+def compare_files(file1, file2):
+    py_file = pd.read_csv(file1)
+    r_file = pd.read_csv(file2)
+
+    for i, (py_row, r_row) in enumerate(zip(py_file.iterrows(), r_file.iterrows())):
+        if compare_row(py_row, r_row):
+            print(py_row, r_row)
+            break
+
+
+def compare_rows(before, after):
+    T1 = (before.T1 is None and after.T1 is None) or (before.T1 == after.T1)
+    T2 = (before.T2 is None and after.T2 is None) or (before.T2 == after.T2)
+    NB_Cat = (before.NB_Cat is None and after.NB_Cat is None) or (
+        before.NB_Cat == after.NB_Cat
+    )
+    AM_Cat = (before.AM_Cat is None and after.AM_Cat is None) or (
+        before.AM_Cat == after.AM_Cat
+    )
+    AF_Cat = (before.AF_Cat is None and after.AF_Cat is None) or (
+        before.AF_Cat == after.AF_Cat
+    )
+    NR_Cat = (before.NR_Cat is None and after.NR_Cat is None) or (
+        before.NR_Cat == after.NR_Cat
+    )
+    R_Hyp = (before.R_Hyp is None and after.R_Hyp is None) or (
+        before.R_Hyp == after.R_Hyp
+    )
+    HypPlas = (before.HypPlas is None and after.HypPlas is None) or (
+        before.HypPlas == after.HypPlas
+    )
+    Race = (before.T1 is None and after.T1 is None) or (before.T1 == after.T1)
+
+    return not (
+        T1
+        and T2
+        and NB_Cat
+        and AM_Cat
+        and AF_Cat
+        and NR_Cat
+        and R_Hyp
+        and HypPlas
+        and Race
+    )
+
+
+def generate_all_combos():
+    T1 = [19, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 98, 99]
+    T2 = [19, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 98, 99]
+    N_Biop = [0, 1, 2, 3, 99]
+    HypPlas = [0, 1, 99]
+    AgeMen = [0, 7, 8, 9, 11, 12, 13, 14, 99]
+    Age1st = [19, 20, 22, 27, 32, 37]
+    N_Rels = [0, 1, 2, 99]
+    Race = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+    (
+        T1,
+        T2,
+        N_Biop,
+        HypPlas,
+        AgeMen,
+        Age1st,
+        N_Rels,
+        Race,
+    ) = pd.core.reshape.util.cartesian_product(
+        [T1, T2, N_Biop, HypPlas, AgeMen, Age1st, N_Rels, Race]
+    )
+
+    return pd.DataFrame(
+        dict(
+            T2=T1,
+            T1=T2,
+            N_Biop=N_Biop,
+            HypPlas=HypPlas,
+            AgeMen=AgeMen,
+            Age1st=Age1st,
+            N_Rels=N_Rels,
+            Race=Race,
+        )
+    )
+
+
+import pickle
+from collections import namedtuple
+
+
+def save_object(obj, filename):
+    with open(filename, "wb") as outp:
+        pickle.dump(obj, outp, pickle.HIGHEST_PROTOCOL)
+
+
 if __name__ == "__main__":
-    data = pd.read_csv("bcrat_data.csv")
-    data_2 = data.copy()
+    exampledata = pd.read_csv("./bcrat_data.csv")
+    recoded_exampledata = recode_check(exampledata)
+    all_combos = generate_all_combos()
+    print("done")
+    before = recode_check(all_combos)
+    before = convert_pd_to_namedtuples(before.replace({np.nan: None}))
+    Row = namedtuple(
+        "Row",
+        [
+            "T1",
+            "T2",
+            "NB_Cat",
+            "AM_Cat",
+            "AF_Cat",
+            "NR_Cat",
+            "R_Hyp",
+            "HypPlas",
+            "Race",
+            "Error_Ind",
+        ],
+    )
 
-    recoded = convert_pd_to_namedtuples(recode_check(data, 1))
-    recoded_v2 = [
-        recode_check_v2(convert_row_to_BCRAT(row))
-        for row in convert_pd_to_namedtuples(data_2)
+    before = [
+        Row(
+            row.T1,
+            row.T2,
+            row.NB_Cat,
+            row.AM_Cat,
+            row.AF_Cat,
+            row.NR_Cat,
+            row.R_Hyp,
+            row.HypPlas,
+            row.Race,
+            row.Error_Ind,
+        )
+        for row in before
     ]
+    print("done")
+    after = [
+        recode_check_v2(convert_row_to_BCRAT(row))
+        for row in convert_pd_to_namedtuples(all_combos)
+    ]
+    print("done")
+    save_object(before, "./before.pkl")
+    save_object(after, "./after.pkl")
 
-    for i, (v1, v2) in enumerate(zip(recoded, recoded_v2)):
-        print(i)
-        compare_values(v1, v2)
+    # for brow, arow in zip(before, after):
+    #     if compare_rows(brow, arow):
+    #         print(brow)
+    #         print(arow)
