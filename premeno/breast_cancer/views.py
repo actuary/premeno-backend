@@ -1,5 +1,9 @@
+import json
+
 from rest_framework import viewsets
 from rest_framework.response import Response
+
+import premeno.breast_cancer.bcrat as bc
 
 
 class BreastCancerRiskViewSet(viewsets.ViewSet):
@@ -12,5 +16,6 @@ class BreastCancerRiskViewSet(viewsets.ViewSet):
         """
         Return breast cancer
         """
-        print(request.data)
+        data = request.query_params
+        print(json.dumps(data, indent=4))
         return Response({"baseline_risk": 0.05, "relative_risk": 2})

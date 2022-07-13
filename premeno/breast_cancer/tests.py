@@ -5,9 +5,6 @@ from premeno.breast_cancer.bcrat import Subject
 
 
 class TestRecodings:
-
-    subject = Subject(0, 0, 0, 0, 0, 0, 0, 0)
-
     def test_recode_N_Biop(self):
         assert Subject(0, 0, 0, 99, 0, 0, 0, 1).no_of_biopsies_cat == 0
         assert Subject(0, 0, 1, 99, 0, 0, 0, 1).no_of_biopsies_cat == 1
@@ -234,4 +231,60 @@ class TestRecodings:
         )  # invalid ages
         assert (
             Subject(86, 90, 99, 99, 13, 22, 99, 12).relative_risk() is None
+        )  # invalid race
+
+    def test_absolute_risk(self):
+        assert Subject(45.2, 53.3, 99, 99, 10, 20, 1, 0).absolute_risk() is None
+        assert Subject(45.2, 53.3, 99, 1, 10, 20, 1, 1).absolute_risk() is None
+        assert Subject(45.2, 53.3, 99, 0, 10, 20, 1, 2).absolute_risk() is None
+        assert Subject(45.2, 53.3, 0, 99, 10, 20, 1, 3).absolute_risk() == approx(
+            0.018685969
+        )
+        assert Subject(45.2, 53.3, 1, 99, 10, 20, 1, 4).absolute_risk() == approx(
+            0.044412945
+        )
+        assert Subject(45.2, 53.3, 1, 99, 14, 19, 1, 5).absolute_risk() == approx(
+            0.017693563
+        )
+        assert Subject(45.2, 53.3, 99, 99, 99, 19, 1, 6).absolute_risk() == approx(
+            0.012495505
+        )
+        assert Subject(45.2, 53.3, 1, 1, 14, 19, 1, 7).absolute_risk() == approx(
+            0.057756759
+        )
+        assert Subject(45.2, 53.3, 99, 1, 14, 99, 1, 8).absolute_risk() is None
+        assert Subject(45.2, 53.3, 1, 0, 14, 19, 1, 9).absolute_risk() == approx(
+            0.039060631
+        )
+        assert Subject(45.2, 53.3, 99, 0, 99, 99, 1, 10).absolute_risk() is None
+        assert Subject(45.2, 53.3, 0, 0, 14, 19, 1, 11).absolute_risk() is None
+        assert Subject(45.2, 53.3, 0, 99, 10, 20, 1, 12).absolute_risk() is None
+        assert Subject(45.2, 53.3, 0, 1, 10, 20, 1, 0).absolute_risk() is None
+        assert Subject(45.2, 53.3, 0, 0, 10, 20, 1, 1).absolute_risk() is None
+        assert Subject(45.2, 53.3, 1, 0, 10, 20, 1, 2).absolute_risk() == approx(
+            0.026899040
+        )
+        assert Subject(35, 40, 4, 99, 11, 25, 0, 3).absolute_risk() == approx(
+            0.003162827
+        )
+        assert Subject(35, 40, 4, 99, 11, 98, 0, 4).absolute_risk() == approx(
+            0.010229802
+        )
+        assert Subject(35, 40, 4, 99, 11, 10, 0, 5).absolute_risk() is None
+        assert Subject(35, 40, 4, 99, 36, 25, 0, 6).absolute_risk() is None
+        assert Subject(27, 90, 99, 99, 13, 22, 0, 7).absolute_risk() == approx(
+            0.088276689
+        )
+        assert Subject(27, 90, 99, 99, 13, 22, 99, 8).absolute_risk() == approx(
+            0.067678480
+        )
+        assert Subject(18, 26, 99, 99, 13, 22, 99, 9).absolute_risk() is None
+        assert (
+            Subject(27, 26, 99, 99, 13, 22, 99, 10).absolute_risk() is None
+        )  # invalid ages
+        assert (
+            Subject(85, 91, 99, 99, 13, 22, 99, 11).absolute_risk() is None
+        )  # invalid ages
+        assert (
+            Subject(86, 90, 99, 99, 13, 22, 99, 12).absolute_risk() is None
         )  # invalid race
