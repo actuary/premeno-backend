@@ -1,5 +1,3 @@
-import json
-
 from rest_framework import viewsets
 from rest_framework.response import Response
 
@@ -17,5 +15,16 @@ class BreastCancerRiskViewSet(viewsets.ViewSet):
         Return breast cancer
         """
         data = request.query_params
-        print(json.dumps(data, indent=4))
-        return Response({"baseline_risk": 0.05, "relative_risk": 2})
+        subject = bc.Subject.fromJson(data)
+        mht = bc.SubjectMHT(data)
+
+        baseline_risk = subject.absolute_risk()
+        formulation = (
+            bc.MhtType.OESTROGEN_ONLY
+            if data["mht"] == "e"
+            else bc.MhtType.OESTROGEN_PROGESTAGEN
+        )
+        relative_risk = mht.relative_risk(formulation)
+        return Response(
+            {"baseline_risk": baseline_risk, "relative_risk": relative_risk}
+        )

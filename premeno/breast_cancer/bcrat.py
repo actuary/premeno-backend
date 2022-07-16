@@ -1,4 +1,5 @@
 import math
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Optional
 
@@ -481,27 +482,37 @@ class Subject:
     MIN_AGE = 20
     MAX_AGE = 90
 
-    # def __init__(self, json):
-    #     self.age_start = self.recode_age_start(json["age_start"])
-    #     self.age_end = self.recode_age_end(json["age_end"])
-    #     self.no_of_biopsies_cat = self.recode_no_of_biopsies(json["no_of_biopsies"], json["hyperplasia"])
-    #     self.hyperplasia_cat = self.recode_hyperplasia(json["hyperplasia"])
-    #     self.age_menarche_cat = self.recode_age_menarche(json["age_menarche"])
-    #     self.age_at_first_child_cat = self.recode_age_at_first_child(json["age_at_first_child"])
-    #     self.no_of_relatives_cat = self.recode_no_of_relatives(json["no_of_relatives"])
-    #     self.race_cat = self.recode_race(json["race"])
-
     @classmethod
     def fromJson(cls, json: dict):
+        age_start = (
+            datetime.now(timezone.utc)
+            - datetime.strptime(json["date_of_birth"], "%Y-%m-%dT%H:%M:%S.%f%z")
+        ) / timedelta(days=365.2425)
+        age_end = age_start + 10
+        no_of_biopsies = (
+            int(json["number_of_biopsies"]) if json["number_of_biopsies"] != "" else 99
+        )
+        hyperplasia = int(json["hyperplasia"]) if json["hyperplasia"] != "" else 99
+        age_menarche = (
+            int(json["age_at_menarche"]) if json["age_at_menarche"] != "" else 99
+        )
+        age_at_first_child = (
+            int(json["age_at_first_child"]) if json["age_at_first_child"] != "" else 99
+        )
+        no_of_relatives = (
+            int(json["family_history"]) if json["family_history"] != "" else 99
+        )
+        race = 1 if json["ethnic_group"] == "white" else 2
+
         return Subject(
-            float(json["age_start"]),
-            float(json["age_end"]),
-            int(json["no_of_biopsies"]),
-            int(json["hyperplasia"]),
-            int(json["age_menarche"]),
-            int(json["age_at_first_child"]),
-            int(json["no_of_relatives"]),
-            int(json["race"]),
+            age_start,
+            age_end,
+            no_of_biopsies,
+            hyperplasia,
+            age_menarche,
+            age_at_first_child,
+            no_of_relatives,
+            race,
         )
 
     def __init__(
@@ -842,25 +853,32 @@ class MhtType(Enum):
 class SubjectMHT:
     def __init__(self, json):
         self.raw_data = json
+        self.age_start = (
+            datetime.now(timezone.utc)
+            - datetime.strptime(json["date_of_birth"], "%Y-%m-%dT%H:%M:%S.%f%z")
+        ) / timedelta(days=365.2425)
         self.age_at_menopause_cat = self.recode_age_at_menopause(
-            json["age_at_menopause"]
+            int(json["time_since_last_period"])
         )
-        self.bmi_cat = self.recode_bmi(json["height"], json["weight"])
-        self.no_of_relatives_cat = self.recode_no_of_relatives(json["no_of_relatives"])
+        self.bmi_cat = self.recode_bmi(float(json["height"]), float(json["weight"]))
+        self.no_of_relatives_cat = self.recode_no_of_relatives(
+            int(json["family_history"])
+        )
         self.ethnic_group_cat = self.recode_ethnic_group(json["ethnic_group"])
         self.education_cat = self.recode_education(json["education"])
-        self.height_cat = self.recode_height(json["height"])
-        self.age_at_menarche = self.recode_age_at_menarche(json["age_at_menarche"])
+        self.height_cat = self.recode_height(int(json["height"]))
+        self.age_at_menarche = self.recode_age_at_menarche(int(json["age_at_menarche"]))
         self.age_at_first_child_cat = self.recode_age_at_first_child(
-            json["age_at_first_child"]
+            int(json["age_at_first_child"])
         )
         self.oral_contraceptive_cat = self.recode_oral_contraceptive(
-            json["oral_contraceptive"]
+            json["oral_contra"]
         )
-        self.alcohol_cat = self.recode_alcohol(json["units_per_week"])
-        self.smoking_cat = self.recode_smoking(json["smoker_status"])
+        self.alcohol_cat = self.recode_alcohol(int(json["alcohol"]))
+        self.smoking_cat = self.recode_smoking(json["smoking"])
 
-    def recode_age_at_menopause(self, age):
+    def recode_age_at_menopause(self, time_since_last_period):
+        age = self.age_start - time_since_last_period / 12.0
         if age < 55:
             return 0
         elif age < 65:
@@ -871,7 +889,7 @@ class SubjectMHT:
             print("ERROR")
             return -1
 
-    def recode_bmi(self, height, weight):
+    def recode_bmi(self, height: float, weight: float) -> int:
         bmi = weight / (height**2)
 
         if bmi < 25:
@@ -887,8 +905,20 @@ class SubjectMHT:
     def recode_no_of_relatives(self, no_of_relatives: int) -> int:
         return 0 if no_of_relatives == 0 else 1
 
-    def recode_education(self, yrs_of_education: int) -> int:
-        return 0 if yrs_of_education < 13 else 1
+    def recode_education(self, education: str) -> int:
+        if education == "":
+            pass
+        elif education == "":
+            pass
+        elif education == "":
+            pass
+
+        elif education == "":
+            pass
+        else:
+            self.yrs_of_education = -1
+
+        return 0 if self.yrs_of_education < 13 else 1
 
     def recode_height(self, height: int) -> int:
         return 0 if height < 165 else 1
@@ -900,7 +930,7 @@ class SubjectMHT:
         return 0 if age_at_first_child < 25 else 1
 
     def recode_oral_contraceptive(self, oral_contraceptive: bool) -> int:
-        return 0 if not oral_contraceptive else 1
+        return 1 if oral_contraceptive == "y" else 0
 
     def recode_alcohol(self, units_per_week: int) -> int:
         return 0 if units_per_week < 10 else 1
