@@ -1,7 +1,8 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-import premeno.breast_cancer.bcrat as bc
+from premeno.breast_cancer.bcrat import GailModel, gail_from_json
+from premeno.breast_cancer.mht import MhtType, SubjectMHT
 
 
 class BreastCancerRiskViewSet(viewsets.ViewSet):
@@ -15,14 +16,14 @@ class BreastCancerRiskViewSet(viewsets.ViewSet):
         Return breast cancer
         """
         data = request.query_params
-        subject = bc.Subject.fromJson(data)
-        mht = bc.SubjectMHT(data)
+        gail = GailModel(gail_from_json(data))
+        mht = SubjectMHT(data)
 
-        baseline_risk = subject.absolute_risk()
+        baseline_risk = gail.predict(10)
         formulation = (
-            bc.MhtType.OESTROGEN_ONLY
+            MhtType.OESTROGEN_ONLY
             if data["mht"] == "e"
-            else bc.MhtType.OESTROGEN_PROGESTAGEN
+            else MhtType.OESTROGEN_PROGESTAGEN
         )
         relative_risk = mht.relative_risk(formulation)
         return Response(

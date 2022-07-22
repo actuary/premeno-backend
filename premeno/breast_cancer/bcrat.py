@@ -1,10 +1,11 @@
 import math
+from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from enum import Enum
-from typing import Optional
+from typing import Tuple, Union
 
-### set up lambda1*, lambda2, beta & F(t] with known constants used in the nci brca risk disk
-## lambda1_Star, BrCa composite incidences
+# set up lambda1*, lambda2, beta & F(t] with known constants used in the nci brca risk disk
+# lambda1_Star, BrCa composite incidences
 # SEER BrCa incidence rates (current] non-hispanic white women, SEER white 1983:87
 # SEER BrCa incidence rates for 1 other (native american) women, SEER white 1992:96
 # "white_avg": [0.00001220, 0.00007410, 0.00022970, 0.00056490, 0.00116450, 0.00195250, 0.00261540,
@@ -13,7 +14,7 @@ from typing import Optional
 # "white_n": [0.0000120469, 0.0000746893, 0.0002437767, 0.0005878291, 0.0012069622, 0.0019762053, 0.0026200977,
 #             0.0033401788, 0.0039743676, 0.0044875763, 0.0048945499, 0.0051610641, 0.0048268456, 0.0040407389],
 
-incidence_rates = {
+_incidence_rates = {
     # SEER BrCa incidence rates (current) non-hispanic white women, SEER white 1983:87
     1: [
         0.00001000,
@@ -204,15 +205,17 @@ incidence_rates = {
 }
 
 #
-# nchs competing mortality for "avg" non-hispanic white women and "avg" other (native american] women, NCHS white 1992:96
+# nchs competing mortality for "avg" non-hispanic white women and "avg" other (native american]
+# women, NCHS white 1992:96
 # "white_avg": [0.00044120, 0.00052540, 0.00067460, 0.00090920, 0.00125340, 0.00195700, 0.00329840,
 #               0.00546220, 0.00910350, 0.01418540, 0.02259350, 0.03611460, 0.06136260, 0.14206630],
 # nchs competing mortality (under study] for non-hispanic white women, NCHS white 1995:2003
-# "white_n": [0.0004000377, 0.0004280396, 0.0005656742, 0.0008474486, 0.0012752947, 0.0018601059, 0.0028780622,
+# "white_n": [0.0004000377, 0.0004280396, 0.0005656742, 0.0008474486, 0.0012752947, 0.0018601059,
+#             0.0028780622,
 #            0.0046903348, 0.0078835252, 0.0127434461, 0.0208586233, 0.0335901145, 0.0575791439,
 #            0.1377327125],
 
-competing_hazards = {
+_competing_hazards = {
     # nchs competing mortality (current] for non-hispanic white women, NCHS white 1985:87
     1: [
         0.00049300,
@@ -402,8 +405,66 @@ competing_hazards = {
     ],
 }
 
-unattributable_risk = {
-    ## F(t) = 1-Attributable Risk
+_betas = {
+    "white": [
+        0.5292641686,
+        0.0940103059,
+        0.2186262218,
+        0.9583027845,
+        -0.2880424830,
+        -0.1908113865,
+    ],
+    "black": [0.1822121131, 0.2672530336, 0.0, 0.4757242578, -0.1119411682, 0.0],
+    "hispanic": [
+        0.0970783641,
+        0.0,
+        0.2318368334,
+        0.166685441,
+        0.0,
+        0.0,
+    ],
+    "other_hispanic": [
+        0.4798624017,
+        0.2593922322,
+        0.4669246218,
+        0.9076679727,
+        0.0,
+        0.0,
+    ],
+    "other_white": [
+        0.5292641686,
+        0.0940103059,
+        0.2186262218,
+        0.9583027845,
+        -0.2880424830,
+        -0.1908113865,
+    ],
+    "asian": [
+        0.55263612260619,
+        0.07499257592975,
+        0.27638268294593,
+        0.79185633720481,
+        0.0,
+        0.0,
+    ],
+}
+
+_races = {
+    1: "white",
+    2: "black",
+    3: "hispanic",
+    4: "other_white",
+    5: "other_hispanic",
+    6: "asian",
+    7: "asian",
+    8: "asian",
+    9: "asian",
+    10: "asian",
+    11: "asian",
+}
+
+_unattributable_risk = {
+    # F(t) = 1-Attributable Risk
     "white": [0.5788413, 0.5788413],
     "black": [0.72949880, 0.74397137],
     "hispanic": [0.749294788397, 0.778215491668],
@@ -417,535 +478,388 @@ class RecodingError(Exception):
     pass
 
 
-class Subject:
-    _betas = {
-        "white": [
-            0.5292641686,
-            0.0940103059,
-            0.2186262218,
-            0.9583027845,
-            -0.2880424830,
-            -0.1908113865,
-        ],
-        "black": [0.1822121131, 0.2672530336, 0.0, 0.4757242578, -0.1119411682, 0.0],
-        "hispanic": [
-            0.0970783641,
-            0.0,
-            0.2318368334,
-            0.166685441,
-            0.0,
-            0.0,
-        ],
-        "other_hispanic": [
-            0.4798624017,
-            0.2593922322,
-            0.4669246218,
-            0.9076679727,
-            0.0,
-            0.0,
-        ],
-        "other_white": [
-            0.5292641686,
-            0.0940103059,
-            0.2186262218,
-            0.9583027845,
-            -0.2880424830,
-            -0.1908113865,
-        ],
-        "asian": [
-            0.55263612260619,
-            0.07499257592975,
-            0.27638268294593,
-            0.79185633720481,
-            0.0,
-            0.0,
-        ],
-    }
+@dataclass
+class GailFactors:
+    """Holds the categorised risk factors after encoding for the Cox model"""
 
-    _races = {
-        1: "white",
-        2: "black",
-        3: "hispanic",
-        4: "other_white",
-        5: "other_hispanic",
-        6: "asian",
-        7: "asian",
-        8: "asian",
-        9: "asian",
-        10: "asian",
-        11: "asian",
-    }
+    age: float
+    no_of_biopsies: int
+    age_at_menarche: int
+    age_at_first_child: int
+    no_of_relatives: int
+    relative_risk_factor: float
+    race: int
 
-    HISPANICS = [3, 5]
-    ASIANS = [6, 7, 8, 9, 10, 11]
-    UNKNOWN_RESPONSE = 99
-    MIN_AGE = 20
-    MAX_AGE = 90
 
-    @classmethod
-    def fromJson(cls, json: dict):
-        age_start = (
-            datetime.now(timezone.utc)
-            - datetime.strptime(json["date_of_birth"], "%Y-%m-%dT%H:%M:%S.%f%z")
-        ) / timedelta(days=365.2425)
-        age_end = age_start + 10
+_HISPANICS = [3, 5]
+_ASIANS = [6, 7, 8, 9, 10, 11]
+_UNKNOWN_RESPONSE = 99
+_MIN_AGE = 20
+_MAX_AGE = 90
+
+
+def gail_from_json(json: dict) -> GailFactors:
+    """Validates past in dictionary (API data) and returns Gail model"""
+    age = (
+        datetime.now(timezone.utc)
+        - datetime.strptime(json["date_of_birth"], "%Y-%m-%dT%H:%M:%S.%f%z")
+    ) / timedelta(days=365.2425)
+
+    if json["biopsy"] == "n":
+        no_of_biopsies = 0
+        hyperplasia = 99
+    else:
         no_of_biopsies = (
-            int(json["number_of_biopsies"]) if json["number_of_biopsies"] != "" else 99
+            int(json["number_of_biopsies"])
+            if "number_of_biopsies" in json and json["number_of_biopsies"] != ""
+            else 99
         )
-        hyperplasia = int(json["hyperplasia"]) if json["hyperplasia"] != "" else 99
-        age_menarche = (
-            int(json["age_at_menarche"]) if json["age_at_menarche"] != "" else 99
-        )
-        age_at_first_child = (
-            int(json["age_at_first_child"]) if json["age_at_first_child"] != "" else 99
-        )
-        no_of_relatives = (
-            int(json["family_history"]) if json["family_history"] != "" else 99
-        )
-        race = 1 if json["ethnic_group"] == "white" else 2
-
-        return Subject(
-            age_start,
-            age_end,
-            no_of_biopsies,
-            hyperplasia,
-            age_menarche,
-            age_at_first_child,
-            no_of_relatives,
-            race,
+        hyperplasia = (
+            int(json["hyperplasia"])
+            if "hyperplasia" in json and json["hyperplasia"] != ""
+            else 99
         )
 
-    def __init__(
+    age_menarche = int(json["age_at_menarche"]) if json["age_at_menarche"] != "" else 99
+
+    age_at_first_child = (
+        int(json["age_at_first_child"])
+        if json["no_children"] == "false" and json["age_at_first_child"] != ""
+        else 99
+    )
+
+    no_of_relatives = (
+        int(json["family_history"]) if json["family_history"] != "" else 99
+    )
+    race = 1 if json["ethnic_group"] == "white" else 2
+
+    return recode_data_for_gail(
+        age,
+        no_of_biopsies,
+        hyperplasia,
+        age_menarche,
+        age_at_first_child,
+        no_of_relatives,
+        race,
+    )
+
+
+def recode_data_for_gail(
+    age: float,
+    no_of_biopsies: int,
+    hyperplasia: int,
+    age_at_menarche: int,
+    age_at_first_child: int,
+    no_of_relatives: int,
+    race: int,
+) -> GailFactors:
+    """Recodes each risk factor into their levels for the Cox model"""
+    return GailFactors(
+        recode_age(age),
+        recode_no_of_biopsies(no_of_biopsies, hyperplasia, race),
+        recode_age_at_menarche(age_at_menarche, age, race),
+        recode_age_at_first_child(age_at_first_child, age, age_at_menarche, race),
+        recode_no_of_relatives(no_of_relatives, race),
+        relative_risk_factor(no_of_biopsies, hyperplasia, race),
+        recode_race(race),
+    )
+
+
+def recode_age(age: float) -> float:
+    """Validates age of individual for Cox model"""
+    if age < _MIN_AGE or age >= _MAX_AGE:
+        raise RecodingError("Failed to recode age start")
+    return age
+
+
+def recode_age_end(age: float, age_end: float) -> float:
+    """Validates projected age of individual"""
+    if age_end > _MAX_AGE or age >= age_end:
+        raise RecodingError("Failed to recode age end")
+
+    return age_end
+
+
+def invalid_biopsy_choice(no_biopsies: int, hyperplasia: int) -> bool:
+    """Returns false if bad selection of number of biopsies/hyperplasia biopsies"""
+    return (
+        0 < no_biopsies < _UNKNOWN_RESPONSE
+        and hyperplasia not in (0, 1, _UNKNOWN_RESPONSE)
+    ) or (no_biopsies in (0, _UNKNOWN_RESPONSE) and hyperplasia != _UNKNOWN_RESPONSE)
+
+
+def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: int) -> int:
+    """Recodes number of biopsies from 0 to 2"""
+    if race in _HISPANICS and no_of_biopsies in (0, _UNKNOWN_RESPONSE):
+        return 0
+
+    elif invalid_biopsy_choice(no_of_biopsies, hyperplasia):
+        raise RecodingError("Failed to recode number of biopsies")
+
+    elif no_of_biopsies in (0, _UNKNOWN_RESPONSE):
+        return 0
+
+    elif no_of_biopsies == 1:
+        return 1
+
+    elif race in _HISPANICS and 2 <= no_of_biopsies < _UNKNOWN_RESPONSE:
+        return 1
+
+    elif 2 <= no_of_biopsies < _UNKNOWN_RESPONSE:
+        return 2
+    else:
+        raise RecodingError("Failed to recode number of biopsies")
+
+
+def recode_age_at_menarche(age_at_menarche: int, age: float, race: int) -> int:
+    """Recodes age_at_menarche from 0 to 2"""
+    if race == 3:
+        return 0
+
+    elif age < age_at_menarche < _UNKNOWN_RESPONSE:
+        raise RecodingError("Failed to recode age at menarche")
+
+    elif age_at_menarche < 0:
+        raise RecodingError("Failed to recode age at menarche")
+
+    elif age_at_menarche < 12 and race == 2:
+        return 1
+
+    elif age_at_menarche < 12:
+        return 2
+
+    elif age_at_menarche < 14:
+        return 1
+
+    elif 14 <= age_at_menarche <= age:
+        return 0
+
+    elif age_at_menarche == _UNKNOWN_RESPONSE:
+        return 0
+    else:
+        raise RecodingError("Failed to recode age at menarche")
+
+
+def recode_age_at_first_child(
+    age_at_first_child: int, age: float, age_at_menarche: int, race: int
+) -> int:
+    """Recodes age at first child from 0 to 3"""
+
+    UNKNOWN_RESPONSE_1st = 98
+
+    if race == 2:
+        return 0
+
+    elif age_at_first_child < age_at_menarche < _UNKNOWN_RESPONSE:
+        raise RecodingError("Failed to recode age at first child")
+
+    elif age < age_at_first_child < UNKNOWN_RESPONSE_1st:
+        raise RecodingError("Failed to recode age at first child")
+
+    elif age_at_first_child < 20:
+        return 0
+
+    elif age_at_first_child < 25:
+        return 1
+
+    elif age_at_first_child < 30 and race in _HISPANICS:
+        return 1
+
+    elif age_at_first_child < 30:
+        return 2
+
+    elif age_at_first_child < UNKNOWN_RESPONSE_1st and race in _HISPANICS:
+        return 2
+
+    elif age_at_first_child < UNKNOWN_RESPONSE_1st:
+        return 3
+
+    elif age_at_first_child == UNKNOWN_RESPONSE_1st:
+        return 2
+
+    elif age_at_first_child == _UNKNOWN_RESPONSE:
+        return 0
+
+    else:
+        raise RecodingError("Failed to recode age at first child")
+
+
+def recode_no_of_relatives(no_of_relatives: int, race: int) -> int:
+    """Recodes the number of relatives from 0 to 2"""
+    if no_of_relatives == 0:
+        return 0
+
+    elif no_of_relatives == 1:
+        return 1
+
+    elif race in _HISPANICS + _ASIANS and no_of_relatives < _UNKNOWN_RESPONSE:
+        return 1
+
+    elif no_of_relatives < _UNKNOWN_RESPONSE:
+        return 2
+
+    elif no_of_relatives == _UNKNOWN_RESPONSE:
+        return 0
+
+    else:
+        raise RecodingError("Failed to recode number of relatives")
+
+
+def recode_race(race: int) -> int:
+    """Ensures valid race factor"""
+
+    if race not in range(1, 12):
+        raise RecodingError("Failed to recode race")
+    return race
+
+
+def relative_risk_factor(no_of_biopsies: int, hyperplasia: int, race: int) -> float:
+    """Returns the hyperplasia relative risk factor"""
+
+    no_of_biopsies_fac = recode_no_of_biopsies(no_of_biopsies, hyperplasia, race)
+    if no_of_biopsies_fac == 0:
+        return 1.00
+    elif hyperplasia == 0:
+        return 0.93
+    elif hyperplasia == 1:
+        return 1.82
+    elif hyperplasia == _UNKNOWN_RESPONSE:
+        return 1.00
+
+    else:
+        raise RecodingError("Failed to recode relative risk factor")
+
+
+def bucket(value: int, buckets: Mapping[float, Union[int, None]]) -> Union[int, None]:
+    """Buckets value into bucket with greatest key less than or
+    equal to value. Buckets must be specified in order
+    """
+    keys = list(buckets.keys())
+
+    if keys[0] > value:
+        return None
+
+    # find smallest key that it maps to
+    for i in range(len(keys) - 1):
+        print(keys[i], value, keys[i + 1], "oi")
+        if keys[i] <= value < keys[i + 1]:
+            print(keys[i])
+            print(buckets)
+            return buckets[keys[i]]
+
+    return buckets[keys[len(keys) - 1]]
+
+
+class GailModel:
+    """Produces relative and absolute risks given gail factors"""
+
+    def __init__(self, factors: GailFactors):
+        self.factors = factors
+
+    def _calculate_interval_length(
+        self, interval: int, interval_endpoints: tuple[int, int], age_end: float
+    ) -> float:
+        number_intervals = interval_endpoints[1] - interval_endpoints[0] + 1
+        if number_intervals > 1 and interval == interval_endpoints[0]:
+            return 1 - (self.factors.age - math.floor(self.factors.age))
+
+        elif number_intervals > 1 and interval == interval_endpoints[1]:
+            z1 = 1 if age_end > math.floor(age_end) else 0
+            z2 = 1 if age_end == math.floor(age_end) else 0
+            return (age_end - math.floor(age_end)) * z1 + z2
+
+        elif number_intervals == 1:
+            return age_end - self.factors.age
+        else:
+            return 1
+
+    def _get_incidence_rate(self, interval: int) -> float:
+        BAND_WIDTH = 5
+        return _incidence_rates[self.factors.race][(interval - 1) // BAND_WIDTH]
+
+    def _get_competing_hazard(self, interval: int) -> float:
+        BAND_WIDTH = 5
+        return _competing_hazards[self.factors.race][(interval - 1) // BAND_WIDTH]
+
+    def _lambda_j(self, interval: int, unattrib_risk: float) -> float:
+        incidence_rate = self._get_incidence_rate(interval)
+        competing_hazard = self._get_competing_hazard(interval)
+
+        return incidence_rate * unattrib_risk + competing_hazard
+
+    def _pi_j(
         self,
-        age_start: float,
-        age_end: float,
-        no_of_biopsies: int,
-        hyperplasia: int,
-        age_menarche: int,
-        age_at_first_child: int,
-        no_of_relatives: int,
-        race: int,
-    ):
-        self._age_start = age_start
-        self._age_end = age_end
-        self._no_of_biopsies = no_of_biopsies
-        self._hyperplasia = hyperplasia
-        self._age_menarche = age_menarche
-        self._age_at_first_child = age_at_first_child
-        self._no_of_relatives = no_of_relatives
-        self._race = race
+        interval: int,
+        interval_length: float,
+        unattrib_risk: float,
+        lambdaj: float,
+        cumulative_lambda: float,
+    ) -> float:
+        incidence_rate = self._get_incidence_rate(interval)
 
-    @property
-    def age_start(self) -> Optional[float]:
-        if (
-            self._age_start < self.MIN_AGE
-            or self._age_start >= self.MAX_AGE
-            or self._age_start >= self._age_end
-        ):
-            return None
-        return self._age_start
-
-    @property
-    def age_end(self) -> Optional[float]:
-        if self._age_end > self.MAX_AGE or self._age_start >= self._age_end:
-            return None
-        return self._age_end
-
-    @property
-    def no_of_biopsies_cat(self) -> Optional[int]:
-        no_of_biopsies_cat = None
-
-        if self._invalid_biopsy_choice(self._no_of_biopsies, self._hyperplasia):
-            no_of_biopsies_cat = None
-
-        elif no_of_biopsies_cat == None and self._no_of_biopsies in (
-            0,
-            self.UNKNOWN_RESPONSE,
-        ):
-            no_of_biopsies_cat = 0
-
-        elif no_of_biopsies_cat == None and self._no_of_biopsies == 1:
-            no_of_biopsies_cat = 1
-
-        elif (
-            no_of_biopsies_cat == None
-            and 2 <= self._no_of_biopsies < self.UNKNOWN_RESPONSE
-        ):
-            no_of_biopsies_cat = 2
-
-        if self._race in self.HISPANICS:
-            if self._no_of_biopsies in (0, self.UNKNOWN_RESPONSE):
-                no_of_biopsies_cat = 0
-
-            if (no_of_biopsies_cat or -1) >= 2:
-                no_of_biopsies_cat = 1
-
-        return no_of_biopsies_cat
-
-    @property
-    def age_at_menarche_cat(self) -> Optional[int]:
-        age_menarche_cat = None
-
-        if self._age_menarche < 0:
-            age_menarche_cat = None
-
-        elif self._age_menarche < 12:
-            age_menarche_cat = 2
-
-        elif self._age_menarche < 14:
-            age_menarche_cat = 1
-
-        elif 14 <= self._age_menarche <= self._age_start:
-            age_menarche_cat = 0
-
-        elif self._age_menarche == self.UNKNOWN_RESPONSE:
-            age_menarche_cat = 0
-
-        if self._age_start < self._age_menarche < self.UNKNOWN_RESPONSE:
-            age_menarche_cat = None
-
-        if self._race == 2 and age_menarche_cat == 2:
-            age_menarche_cat = 1
-
-        if self._race == 3:
-            age_menarche_cat = 0
-
-        return age_menarche_cat
-
-    @property
-    def age_at_first_child_cat(self) -> Optional[int]:
-        age_at_first_child_cat = None
-        UNKNOWN_RESPONSE_1st = 98
-
-        if self._age_at_first_child < 20:
-            age_at_first_child_cat = 0
-
-        elif self._age_at_first_child < 25:
-            age_at_first_child_cat = 1
-
-        elif self._age_at_first_child < 30:
-            age_at_first_child_cat = 2
-
-        elif self._age_at_first_child < UNKNOWN_RESPONSE_1st:
-            age_at_first_child_cat = 3
-
-        elif self._age_at_first_child == UNKNOWN_RESPONSE_1st:
-            age_at_first_child_cat = 2
-
-        elif self._age_at_first_child == self.UNKNOWN_RESPONSE:
-            age_at_first_child_cat = 0
-
-        if self._age_at_first_child < self._age_menarche < self.UNKNOWN_RESPONSE:
-            age_at_first_child_cat = None
-
-        if self._age_start < self._age_at_first_child < UNKNOWN_RESPONSE_1st:
-            age_at_first_child_cat = None
-
-        if self._race == 2:
-            age_at_first_child_cat = 0
-
-        if (
-            self._race in self.HISPANICS
-            and self._age_at_first_child != UNKNOWN_RESPONSE_1st
-            and age_at_first_child_cat == 2
-        ):
-            age_at_first_child_cat = 1
-
-        if self._race in self.HISPANICS and age_at_first_child_cat == 3:
-            age_at_first_child_cat = 2
-
-        return age_at_first_child_cat
-
-    @property
-    def no_of_relatives_cat(self) -> Optional[int]:
-        no_of_relatives_cat = None
-
-        if self._no_of_relatives == 0:
-            no_of_relatives_cat = 0
-
-        elif self._no_of_relatives == 1:
-            no_of_relatives_cat = 1
-
-        elif self._no_of_relatives < self.UNKNOWN_RESPONSE:
-            no_of_relatives_cat = 2
-
-        elif self._no_of_relatives == self.UNKNOWN_RESPONSE:
-            no_of_relatives_cat = 0
-
-        if self._race in self.HISPANICS + self.ASIANS and no_of_relatives_cat == 2:
-            no_of_relatives_cat = 1
-
-        return no_of_relatives_cat
-
-    @property
-    def race(self) -> Optional[int]:
-        if self._race not in range(1, 12):
-            return None
-        return self._race
-
-    @property
-    def relative_risk_factor(self):
-        relative_risk_factor = None
-
-        if self.no_of_biopsies_cat is not None and self.no_of_biopsies_cat == 0:
-            relative_risk_factor = 1.00
-
-        if (self.no_of_biopsies_cat or 0) > 0:
-            if self._hyperplasia == 0:
-                relative_risk_factor = 0.93
-            elif self._hyperplasia == 1:
-                relative_risk_factor = 1.82
-            elif self._hyperplasia == self.UNKNOWN_RESPONSE:
-                relative_risk_factor = 1.00
-
-        if self._invalid_biopsy_choice(self._no_of_biopsies, self._hyperplasia):
-            relative_risk_factor = None
-
-        return relative_risk_factor
-
-    def _invalid_biopsy_choice(self, no_biopsies, hyperplasia) -> bool:
         return (
-            (
-                0 < no_biopsies < self.UNKNOWN_RESPONSE
-                and hyperplasia not in (0, 1, self.UNKNOWN_RESPONSE)
-            )
-            or no_biopsies in (0, self.UNKNOWN_RESPONSE)
-            and hyperplasia != self.UNKNOWN_RESPONSE
+            (unattrib_risk * incidence_rate / lambdaj)
+            * math.exp(-cumulative_lambda)
+            * (1 - math.exp(-lambdaj * interval_length))
         )
 
-    def is_valid(self) -> bool:
-        return (
-            self.age_start is not None
-            and self.age_end is not None
-            and self.no_of_biopsies_cat is not None
-            and self.age_at_menarche_cat is not None
-            and self.age_at_first_child_cat is not None
-            and self.no_of_relatives_cat is not None
-            and self.race is not None
-        )
-
-    def relative_risk(self) -> Optional[float]:
-        if not self.is_valid():
-            return None
-
-        beta = self._betas[self._races[self.race]]  # type: ignore
+    def relative_risk(self) -> tuple[float, float]:
+        """Calculates the relative risk of the given Gail factors"""
+        beta = _betas[_races[self.factors.race]]
 
         lp1 = (
-            self.no_of_biopsies_cat * beta[0]  # type: ignore
-            + self.age_at_menarche_cat * beta[1]  # type: ignore
-            + self.age_at_first_child_cat * beta[2]  # type: ignore
-            + self.no_of_relatives_cat * beta[3]  # type: ignore
-            + self.age_at_first_child_cat  # type: ignore
-            * self.no_of_relatives_cat  # type: ignore
-            * beta[5]  # type: ignore
-            + math.log(self.relative_risk_factor)  # type: ignore
-        )  # type: ignore
+            self.factors.no_of_biopsies * beta[0]
+            + self.factors.age_at_menarche * beta[1]
+            + self.factors.age_at_first_child * beta[2]
+            + self.factors.no_of_relatives * beta[3]
+            + self.factors.age_at_first_child * self.factors.no_of_relatives * beta[5]
+            + math.log(self.factors.relative_risk_factor)
+        )
+        lp2 = lp1 + self.factors.no_of_biopsies * beta[4]
 
-        lp2 = lp1 + self.no_of_biopsies_cat * beta[4]  # type: ignore
+        return (math.exp(lp1), math.exp(lp2))
 
-        return (math.exp(lp1), math.exp(lp2))  # type: ignore
+    def predict(self, years: float) -> float:
+        """Gets the probability (absolute risk) of breast cancer incidence of the
+        given years from the starting age
+        """
+        START_AGE = 20
+        PROJ_YEARS = 70  # project from 20 to 90
+        PROJ_AGE = START_AGE + PROJ_YEARS
+        PIVOT_AGE = 50  # Gail's model differentiates between <50 and above
 
-    def absolute_risk(self) -> Optional[float]:
-        if not self.is_valid():
-            return None
+        rel_risks = self.relative_risk()
 
-        rrstar1, rrstar2 = self.relative_risk()
+        age_end = recode_age_end(self.factors.age, self.factors.age + years)
+        interval_endpoints = (
+            math.floor(self.factors.age) - START_AGE + 1,
+            math.ceil(age_end) - START_AGE,
+        )
 
-        start_interval = math.floor(self.age_start) - 20 + 1
-        end_interval = math.ceil(self.age_end) - 20
+        unattrib_risks = _unattributable_risk[_races[self.factors.race]]
+        one_ar_rr1 = unattrib_risks[0] * rel_risks[0]
+        one_ar_rr2 = unattrib_risks[1] * rel_risks[1]
 
-        number_intervals = end_interval - start_interval + 1
+        one_ar_rr = [
+            one_ar_rr1 if i < PIVOT_AGE else one_ar_rr2
+            for i in range(START_AGE, PROJ_AGE)
+        ]
+
         abs_risk = 0
         cumulative_lambda = 0
-        one_ar1, one_ar2 = unattributable_risk[self._races[self.race]]  # type: ignore
-        one_ar_rr1 = one_ar1 * rrstar1
-        one_ar_rr2 = one_ar2 * rrstar2
-
-        one_ar_rr = [one_ar_rr1 if i < 30 else one_ar_rr2 for i in range(70)]
-        lambda1 = incidence_rates[self.race]
-        lambda2 = competing_hazards[self.race]
-
-        for j in range(number_intervals):
-            j_interval = start_interval + j - 1
-            interval_length = 1
-            if number_intervals > 1 and j == 0:
-                interval_length = 1 - (self.age_start - math.floor(self.age_start))
-            elif number_intervals > 1 and j == number_intervals - 1:
-                z1 = 1 if self.age_end > math.floor(self.age_end) else 0
-                z2 = 1 if self.age_end == math.floor(self.age_end) else 0
-                interval_length = (self.age_end - math.floor(self.age_end)) * z1 + z2
-            elif number_intervals == 1:
-                interval_length = self.age_end - self.age_start
-
-            lambdaj = (
-                lambda1[j_interval // 5] * one_ar_rr[j_interval]
-                + lambda2[j_interval // 5]
+        for interval in range(interval_endpoints[0], interval_endpoints[1] + 1):
+            interval_length = self._calculate_interval_length(
+                interval, interval_endpoints, age_end
             )
-            PI_j = (
-                (one_ar_rr[j_interval] * lambda1[j_interval // 5] / lambdaj)
-                * math.exp(-cumulative_lambda)
-            ) * (1 - math.exp(-lambdaj * interval_length))
-            abs_risk += PI_j
+
+            unattrib_risk = one_ar_rr[interval - 1]
+
+            lambdaj = self._lambda_j(interval, unattrib_risk)
+            pi_j = self._pi_j(
+                interval, interval_length, unattrib_risk, lambdaj, cumulative_lambda
+            )
+
+            abs_risk += pi_j
             cumulative_lambda += lambdaj * interval_length
 
         return abs_risk
-
-
-relative_risks = {
-    "age_at_menopause": {
-        0: [0.95, 1.71],  # <55 years
-        1: [1.31, 2.04],  # 55-64 years
-        2: [1.35, 2.19],  # 65+ years
-    },
-    "bmi": {
-        0: [1.49, 2.32],  # <25 kg/m2
-        1: [1.25, 1.92],  # 25-29 kg/m2
-        2: [1.14, 1.71],  # 30+ kg/m2
-    },
-    "family_history": {
-        0: [1.31, 2.02],  # No
-        1: [1.35, 2.11],  # Yes
-    },
-    "ethnic_group": {
-        0: [1.32, 2.08],  # White
-        1: [1.39, 2.13],  # Other
-    },
-    "education": {
-        0: [1.28, 2.05],  # <13 years
-        1: [1.35, 2.03],  # 13+ years
-    },
-    "height": {
-        0: [1.32, 2.10],  # <165 cm
-        1: [1.34, 2.03],  # 165+ cm
-    },
-    "age_at_menarche": {
-        0: [1.27, 2.03],  # <13 years
-        1: [1.35, 2.07],  # 13+ years
-    },
-    "parity": {
-        0: [1.42, 2.23],  # Nulliparous
-        1: [1.28, 2.04],  # Parous
-    },
-    "age_at_first_child": {
-        0: [1.31, 2.02],  # <25 years
-        1: [1.32, 2.03],  # 25+ years
-    },
-    "oral_contraceptive": {
-        0: [1.28, 2.11],  # Never used
-        1: [1.34, 2.01],  # Ever used
-    },
-    "alcohol": {
-        0: [1.3, 2.04],  # <10 g/week
-        1: [1.3, 2.11],  # 10+ g/week
-    },
-    "smoking": {
-        0: [1.32, 2.08],  # Never
-        1: [1.32, 2.04],  # Ever
-    },
-}
-
-
-class MhtType(Enum):
-    OESTROGEN_ONLY = 0
-    OESTROGEN_PROGESTAGEN = 1
-
-
-class SubjectMHT:
-    def __init__(self, json):
-        self.raw_data = json
-        self.age_start = (
-            datetime.now(timezone.utc)
-            - datetime.strptime(json["date_of_birth"], "%Y-%m-%dT%H:%M:%S.%f%z")
-        ) / timedelta(days=365.2425)
-        self.age_at_menopause_cat = self.recode_age_at_menopause(
-            int(json["time_since_last_period"])
-        )
-        self.bmi_cat = self.recode_bmi(float(json["height"]), float(json["weight"]))
-        self.no_of_relatives_cat = self.recode_no_of_relatives(
-            int(json["family_history"])
-        )
-        self.ethnic_group_cat = self.recode_ethnic_group(json["ethnic_group"])
-        self.education_cat = self.recode_education(json["education"])
-        self.height_cat = self.recode_height(int(json["height"]))
-        self.age_at_menarche = self.recode_age_at_menarche(int(json["age_at_menarche"]))
-        self.age_at_first_child_cat = self.recode_age_at_first_child(
-            int(json["age_at_first_child"])
-        )
-        self.oral_contraceptive_cat = self.recode_oral_contraceptive(
-            json["oral_contra"]
-        )
-        self.alcohol_cat = self.recode_alcohol(int(json["alcohol"]))
-        self.smoking_cat = self.recode_smoking(json["smoking"])
-
-    def recode_age_at_menopause(self, time_since_last_period):
-        age = self.age_start - time_since_last_period / 12.0
-        if age < 55:
-            return 0
-        elif age < 65:
-            return 1
-        elif age < 90:
-            return 2
-        else:
-            print("ERROR")
-            return -1
-
-    def recode_bmi(self, height: float, weight: float) -> int:
-        bmi = weight / (height**2)
-
-        if bmi < 25:
-            return 0
-        elif bmi < 35:
-            return 1
-        else:
-            return 2
-
-    def recode_ethnic_group(self, ethnic_group: str) -> int:
-        return 0 if ethnic_group == "white" else 1
-
-    def recode_no_of_relatives(self, no_of_relatives: int) -> int:
-        return 0 if no_of_relatives == 0 else 1
-
-    def recode_education(self, education: str) -> int:
-        if education == "":
-            pass
-        elif education == "":
-            pass
-        elif education == "":
-            pass
-
-        elif education == "":
-            pass
-        else:
-            self.yrs_of_education = -1
-
-        return 0 if self.yrs_of_education < 13 else 1
-
-    def recode_height(self, height: int) -> int:
-        return 0 if height < 165 else 1
-
-    def recode_age_at_menarche(self, age_at_menarche: int) -> int:
-        return 0 if age_at_menarche < 13 else 1
-
-    def recode_age_at_first_child(self, age_at_first_child: int) -> int:
-        return 0 if age_at_first_child < 25 else 1
-
-    def recode_oral_contraceptive(self, oral_contraceptive: bool) -> int:
-        return 1 if oral_contraceptive == "y" else 0
-
-    def recode_alcohol(self, units_per_week: int) -> int:
-        return 0 if units_per_week < 10 else 1
-
-    def recode_smoking(self, smoking: bool) -> int:
-        return 0 if not smoking else 1
-
-    def relative_risk(self, type_of_mht: MhtType) -> float:
-        if type_of_mht == MhtType.OESTROGEN_ONLY:
-            return 1.3
-        elif type_of_mht == MhtType.OESTROGEN_PROGESTAGEN:
-            return 2
-
-
-if __name__ == "__main__":
-    subject = Subject(27, 90, 99, 99, 13, 22, 99, 8)
-    print(subject.relative_risk())
-    print(subject.absolute_risk())
