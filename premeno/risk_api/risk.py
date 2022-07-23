@@ -1,7 +1,7 @@
 import abc
 
-from premeno.breast_cancer.gail import GailModel, gail_from_json
-from premeno.breast_cancer.mht import MhtRisk
+from premeno.risk_api.gail import GailModel, gail_from_json
+from premeno.risk_api.mht import MhtRisk
 
 
 class RiskModel(metaclass=abc.ABCMeta):

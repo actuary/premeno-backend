@@ -1,7 +1,7 @@
 from django.conf import settings
 from rest_framework.routers import DefaultRouter, SimpleRouter
 
-from premeno.breast_cancer.views import BreastCancerRiskViewSet
+from premeno.risk_api.views import BreastCancerRiskViewSet
 from premeno.users.api.views import UserViewSet
 
 if settings.DEBUG:
