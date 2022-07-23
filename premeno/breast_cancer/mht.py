@@ -8,7 +8,7 @@ class MhtType(Enum):
     OESTROGEN_PROGESTAGEN = 1
 
 
-class MhtRiskCalculator:
+class MhtRisk:
     def __init__(self, json):
         self.raw_data = json
 

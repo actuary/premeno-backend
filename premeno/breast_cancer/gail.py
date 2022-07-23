@@ -27,7 +27,7 @@ class Race(Enum):
     (5 year bands from 20 to 90)
 """
 _incidence_rates = {
-    # SEER BrCa incidence rates (current) non-hispanic white women, SEER white 1983:87
+    # SEER BrCa incidence rates non-hispanic white women, SEER white 1983:87
     Race.WHITE: [
         0.00001000,
         0.00007600,
@@ -222,7 +222,7 @@ _incidence_rates = {
     (5 year bands from 20 to 90)
 """
 _competing_hazards = {
-    # nchs competing mortality (current] for non-hispanic white women, NCHS white 1985:87
+    # nchs competing mortality for non-hispanic white women, NCHS white 1985:87
     Race.WHITE: [
         0.00049300,
         0.00053100,
@@ -648,7 +648,10 @@ def recode_age_end(age: float, age_end: float) -> float:
 
 
 def invalid_biopsy_choice(no_biopsies: int, hyperplasia: int) -> bool:
-    """Returns false if bad selection of number of biopsies/hyperplasia biopsies"""
+    """
+    Returns false if bad selection of number of
+    biopsies/hyperplasia biopsies
+    """
     return (
         0 < no_biopsies < _UNKNOWN_RESPONSE
         and hyperplasia not in (0, 1, _UNKNOWN_RESPONSE)
@@ -670,7 +673,7 @@ def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: Race) -> 
         return 1
 
     elif race in _HISPANICS and 2 <= no_of_biopsies < _UNKNOWN_RESPONSE:
-        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        # hispanic RR model from San Fran Bay Area Breast Cancer Study (SFBCS):
         #         (1) groups N_Biop ge 2 with N_Biop eq 1
         return 1
 
@@ -683,7 +686,7 @@ def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: Race) -> 
 def recode_age_at_menarche(age_at_menarche: int, age: float, race: Race) -> int:
     """Recodes age_at_menarche from 0 to 2"""
     if race == Race.HISPANIC_AMERICAN_US:
-        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        # hispanic RR model from San Fran Bay Area Breast Cancer Study (SFBCS):
         #         (2) eliminates  AgeMen from model for US Born hispanic women
         return 0
 
@@ -694,7 +697,8 @@ def recode_age_at_menarche(age_at_menarche: int, age: float, race: Race) -> int:
         raise RecodingError("Failed to recode age at menarche")
 
     elif age_at_menarche < 12 and race == Race.AFRICAN_AMERICAN:
-        # african-american RR model from CARE study: (2) groups AgeMen=2 with AgeMen=1;
+        # african-american RR model from CARE study:
+        #         (2) groups AgeMen=2 with AgeMen=1;
         return 1
 
     elif age_at_menarche < 12:
@@ -720,7 +724,8 @@ def recode_age_at_first_child(
     UNKNOWN_RESPONSE_1st = 98
 
     if race == Race.AFRICAN_AMERICAN:
-        # african-american RR model from CARE study:(1) eliminates Age1st from model;
+        # african-american RR model from CARE study:
+        #       (1) eliminates Age1st from model;
         return 0
 
     elif age_at_first_child < age_at_menarche < _UNKNOWN_RESPONSE:
@@ -736,7 +741,7 @@ def recode_age_at_first_child(
         return 1
 
     elif age_at_first_child < 30 and race in _HISPANICS:
-        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        # hispanic RR model from San Fran Bay Area Breast Cancer Study (SFBCS):
         #         (3) group Age1st=25-29 with Age1st=20-24 and code as 1
         return 1
 
@@ -744,7 +749,7 @@ def recode_age_at_first_child(
         return 2
 
     elif age_at_first_child < UNKNOWN_RESPONSE_1st and race in _HISPANICS:
-        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        # hispanic RR model from San Fran Bay Area Breast Cancer Study (SFBCS):
         #         (3) for   Age1st=30+, 98 (nulliparous)       code as 2
         return 2
 
@@ -771,7 +776,7 @@ def recode_no_of_relatives(no_of_relatives: int, race: Race) -> int:
 
     elif race in _HISPANICS + _ASIANS and no_of_relatives < _UNKNOWN_RESPONSE:
         # for asian-americans cat 2 is pooled with cat 1
-        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        # hispanic RR model from San Fran Bay Area Breast Cancer Study (SFBCS):
         #         (4) groups N_Rels=2 with N_Rels=1;
         return 1
 
@@ -845,11 +850,13 @@ class GailModel:
 
     def _get_incidence_rate(self, interval: int) -> float:
         BAND_WIDTH = 5
-        return _incidence_rates[self.factors.race][(interval - 1) // BAND_WIDTH]
+        idx = (interval - 1) // BAND_WIDTH
+        return _incidence_rates[self.factors.race][idx]
 
     def _get_competing_hazard(self, interval: int) -> float:
         BAND_WIDTH = 5
-        return _competing_hazards[self.factors.race][(interval - 1) // BAND_WIDTH]
+        idx = (interval - 1) // BAND_WIDTH
+        return _competing_hazards[self.factors.race][idx]
 
     def _lambda_j(self, interval: int, unattrib_risk: float) -> float:
         incidence_rate = self._get_incidence_rate(interval)
@@ -882,7 +889,7 @@ class GailModel:
             + self.factors.age_at_menarche * beta[1]
             + self.factors.age_at_first_child * beta[2]
             + self.factors.no_of_relatives * beta[3]
-            + self.factors.age_at_first_child * self.factors.no_of_relatives * beta[5]
+            + (self.factors.age_at_first_child * self.factors.no_of_relatives * beta[5])
             + math.log(self.factors.relative_risk_factor)
         )
         lp2 = lp1 + self.factors.no_of_biopsies * beta[4]
@@ -890,7 +897,9 @@ class GailModel:
         return (math.exp(lp1), math.exp(lp2))
 
     def predict(self, years: float) -> float:
-        """Gets the probability (absolute risk) of breast cancer incidence of the
+        """
+        Gets the probability (absolute risk) of breast cancer
+        incidence of the
         given years from the starting age
         """
         START_AGE = 20
@@ -899,7 +908,7 @@ class GailModel:
         PIVOT_AGE = 50  # Gail's model differentiates between <50 and above
 
         age_end = recode_age_end(self.factors.age, self.factors.age + years)
-        interval_endpoints = (
+        interval_rng = (
             math.floor(self.factors.age) - START_AGE + 1,
             math.ceil(age_end) - START_AGE,
         )
@@ -915,21 +924,21 @@ class GailModel:
             for i in range(START_AGE, PROJ_AGE + 1)
         ]
 
-        abs_risk = 0
-        cumulative_lambda = 0
-        for interval in range(interval_endpoints[0], interval_endpoints[1] + 1):
+        abs_risk = 0.0
+        cum_lambda = 0.0
+        for interval in range(interval_rng[0], interval_rng[1] + 1):
             interval_length = self._calculate_interval_length(
-                interval, interval_endpoints, age_end
+                interval, interval_rng, age_end
             )
 
             unattrib_risk = one_ar_rr[interval - 1]
 
             lambdaj = self._lambda_j(interval, unattrib_risk)
             pi_j = self._pi_j(
-                interval, interval_length, unattrib_risk, lambdaj, cumulative_lambda
+                interval, interval_length, unattrib_risk, lambdaj, cum_lambda
             )
 
             abs_risk += pi_j
-            cumulative_lambda += lambdaj * interval_length
+            cum_lambda += lambdaj * interval_length
 
         return abs_risk
