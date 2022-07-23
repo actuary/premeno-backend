@@ -2,21 +2,33 @@ import math
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Tuple, Union
+from enum import Enum
+from typing import Union
 
-# set up lambda1*, lambda2, beta & F(t] with known constants used in the nci brca risk disk
-# lambda1_Star, BrCa composite incidences
-# SEER BrCa incidence rates (current] non-hispanic white women, SEER white 1983:87
-# SEER BrCa incidence rates for 1 other (native american) women, SEER white 1992:96
-# "white_avg": [0.00001220, 0.00007410, 0.00022970, 0.00056490, 0.00116450, 0.00195250, 0.00261540,
-#               0.00302790, 0.00367570, 0.00420290, 0.00473080, 0.00494250, 0.00479760, 0.00401060],
-# SEER BrCa indicdence rates (under study) for non-hispanic white women, SEER white 1995:2003
-# "white_n": [0.0000120469, 0.0000746893, 0.0002437767, 0.0005878291, 0.0012069622, 0.0019762053, 0.0026200977,
-#             0.0033401788, 0.0039743676, 0.0044875763, 0.0048945499, 0.0051610641, 0.0048268456, 0.0040407389],
 
+class Race(Enum):
+    """Race of participant"""
+
+    WHITE = 1
+    AFRICAN_AMERICAN = 2
+    HISPANIC_AMERICAN_US = 3
+    WHITE_OTHER = 4
+    HISPANIC_AMERICAN_FOREIGN = 5
+    CHINESE = 6
+    JAPANESE = 7
+    FILIPINO = 8
+    HAWAIIAN = 9
+    PACIFIC_ISLANDER = 10
+    ASIAN_OTHER = 11
+
+
+"""
+    These are the background rates of breast cancer for each age_group
+    (5 year bands from 20 to 90)
+"""
 _incidence_rates = {
     # SEER BrCa incidence rates (current) non-hispanic white women, SEER white 1983:87
-    1: [
+    Race.WHITE: [
         0.00001000,
         0.00007600,
         0.00026600,
@@ -33,7 +45,7 @@ _incidence_rates = {
         0.00410900,
     ],
     # SEER black 1994-98
-    2: [
+    Race.AFRICAN_AMERICAN: [
         0.00002696,
         0.00011295,
         0.00031094,
@@ -50,7 +62,7 @@ _incidence_rates = {
         0.00363712,
     ],
     # SEER Ca Hisp 1995-2004
-    3: [
+    Race.HISPANIC_AMERICAN_US: [
         0.0000166,
         0.0000741,
         0.0002740,
@@ -67,7 +79,7 @@ _incidence_rates = {
         0.0020414,
     ],
     # SEER white 1983:87
-    4: [
+    Race.WHITE_OTHER: [
         0.00001000,
         0.00007600,
         0.00026600,
@@ -84,7 +96,7 @@ _incidence_rates = {
         0.00410900,
     ],
     # SEER Ca Hisp 1995-2004
-    5: [
+    Race.HISPANIC_AMERICAN_FOREIGN: [
         0.0000102,
         0.0000531,
         0.0001578,
@@ -101,7 +113,7 @@ _incidence_rates = {
         0.0025868,
     ],
     # seer18 chinese  1998:02
-    6: [
+    Race.CHINESE: [
         0.000004059636,
         0.000045944465,
         0.000188279352,
@@ -118,7 +130,7 @@ _incidence_rates = {
         0.002247315779,
     ],
     # seer18 japanese 1998:02
-    7: [
+    Race.JAPANESE: [
         0.000000000001,
         0.000099483924,
         0.000287041681,
@@ -135,7 +147,7 @@ _incidence_rates = {
         0.002051572909,
     ],
     # seer18 filipino 1998:02
-    8: [
+    Race.FILIPINO: [
         0.000007500161,
         0.000081073945,
         0.000227492565,
@@ -152,7 +164,7 @@ _incidence_rates = {
         0.001750879130,
     ],
     # seer18 hawaiian 1998:02
-    9: [
+    Race.HAWAIIAN: [
         0.000045080582,
         0.000098570724,
         0.000339970860,
@@ -169,7 +181,7 @@ _incidence_rates = {
         0.002949061662,
     ],
     # seer18 otr pac isl 1998:02
-    10: [
+    Race.PACIFIC_ISLANDER: [
         0.000000000001,
         0.000071525212,
         0.000288799028,
@@ -186,7 +198,7 @@ _incidence_rates = {
         0.001012248203,
     ],
     # seer18 otr asian 1998:02
-    11: [
+    Race.ASIAN_OTHER: [
         0.000012355409,
         0.000059526456,
         0.000184320831,
@@ -204,20 +216,14 @@ _incidence_rates = {
     ],
 }
 
-#
-# nchs competing mortality for "avg" non-hispanic white women and "avg" other (native american]
-# women, NCHS white 1992:96
-# "white_avg": [0.00044120, 0.00052540, 0.00067460, 0.00090920, 0.00125340, 0.00195700, 0.00329840,
-#               0.00546220, 0.00910350, 0.01418540, 0.02259350, 0.03611460, 0.06136260, 0.14206630],
-# nchs competing mortality (under study] for non-hispanic white women, NCHS white 1995:2003
-# "white_n": [0.0004000377, 0.0004280396, 0.0005656742, 0.0008474486, 0.0012752947, 0.0018601059,
-#             0.0028780622,
-#            0.0046903348, 0.0078835252, 0.0127434461, 0.0208586233, 0.0335901145, 0.0575791439,
-#            0.1377327125],
 
+"""
+    These are the background rates of other risks for each age_group
+    (5 year bands from 20 to 90)
+"""
 _competing_hazards = {
     # nchs competing mortality (current] for non-hispanic white women, NCHS white 1985:87
-    1: [
+    Race.WHITE: [
         0.00049300,
         0.00053100,
         0.00062500,
@@ -233,8 +239,8 @@ _competing_hazards = {
         0.06682800,
         0.14490800,
     ],
-    # NCHS black 1996-00
-    2: [
+    # NCHS african american 1996-00
+    Race.AFRICAN_AMERICAN: [
         0.00074354,
         0.00101698,
         0.00145937,
@@ -251,7 +257,7 @@ _competing_hazards = {
         0.13271262,
     ],
     # SEER Ca Hisp 1995-2004
-    3: [
+    Race.HISPANIC_AMERICAN_US: [
         0.0003561,
         0.0004038,
         0.0005281,
@@ -268,7 +274,7 @@ _competing_hazards = {
         0.0740349,
     ],
     # NCHS white 1985:87
-    4: [
+    Race.WHITE_OTHER: [
         0.00049300,
         0.00053100,
         0.00062500,
@@ -285,7 +291,7 @@ _competing_hazards = {
         0.14490800,
     ],
     # SEER Ca Hisp 1995-2004
-    5: [
+    Race.HISPANIC_AMERICAN_FOREIGN: [
         0.0003129,
         0.0002908,
         0.0003515,
@@ -302,7 +308,7 @@ _competing_hazards = {
         0.1125678,
     ],
     # NCHS mortality chinese  1998:02
-    6: [
+    Race.CHINESE: [
         0.000210649076,
         0.000192644865,
         0.000244435215,
@@ -319,7 +325,7 @@ _competing_hazards = {
         0.098333900733,
     ],
     # NCHS mortality japanese 1998:02
-    7: [
+    Race.JAPANESE: [
         0.000173593803,
         0.000295805882,
         0.000228322534,
@@ -336,7 +342,7 @@ _competing_hazards = {
         0.106149118663,
     ],
     # NCHS mortality filipino 1998:02
-    8: [
+    Race.FILIPINO: [
         0.000229120979,
         0.000262988494,
         0.000314844090,
@@ -353,7 +359,7 @@ _competing_hazards = {
         0.085138518334,
     ],
     # NCHS mortality hawaiian 1998:02
-    9: [
+    Race.HAWAIIAN: [
         0.000563507269,
         0.000369640217,
         0.001019912579,
@@ -370,7 +376,7 @@ _competing_hazards = {
         0.145844504021,
     ],
     # NCHS mortality otr pac isl 1998:02
-    10: [
+    Race.PACIFIC_ISLANDER: [
         0.000465500812,
         0.000600466920,
         0.000851057138,
@@ -387,7 +393,7 @@ _competing_hazards = {
         0.074745721133,
     ],
     # NCHS mortality otr asian 1998:02
-    11: [
+    Race.ASIAN_OTHER: [
         0.000212632332,
         0.000242170741,
         0.000301552711,
@@ -405,8 +411,37 @@ _competing_hazards = {
     ],
 }
 
+
+class RaceCategory(Enum):
+    WHITE = 1
+    AFRICAN_AMERICAN = 2
+    HISPANIC = 3
+    WHITE_OTHER = 4
+    HISPANIC_OTHER = 5
+    ASIAN = 6
+
+
+_races = {
+    Race.WHITE: RaceCategory.WHITE,
+    Race.AFRICAN_AMERICAN: RaceCategory.AFRICAN_AMERICAN,
+    Race.HISPANIC_AMERICAN_US: RaceCategory.HISPANIC,
+    Race.WHITE_OTHER: RaceCategory.WHITE_OTHER,
+    Race.HISPANIC_AMERICAN_FOREIGN: RaceCategory.HISPANIC_OTHER,
+    Race.CHINESE: RaceCategory.ASIAN,
+    Race.JAPANESE: RaceCategory.ASIAN,
+    Race.FILIPINO: RaceCategory.ASIAN,
+    Race.HAWAIIAN: RaceCategory.ASIAN,
+    Race.PACIFIC_ISLANDER: RaceCategory.ASIAN,
+    Race.ASIAN_OTHER: RaceCategory.ASIAN,
+}
+
+
+"""
+    These are the Cox model hazard rates for each risk factor,
+    depends race category of participant
+"""
 _betas = {
-    "white": [
+    RaceCategory.WHITE: [
         0.5292641686,
         0.0940103059,
         0.2186262218,
@@ -414,8 +449,15 @@ _betas = {
         -0.2880424830,
         -0.1908113865,
     ],
-    "black": [0.1822121131, 0.2672530336, 0.0, 0.4757242578, -0.1119411682, 0.0],
-    "hispanic": [
+    RaceCategory.AFRICAN_AMERICAN: [
+        0.1822121131,
+        0.2672530336,
+        0.0,
+        0.4757242578,
+        -0.1119411682,
+        0.0,
+    ],
+    RaceCategory.HISPANIC: [
         0.0970783641,
         0.0,
         0.2318368334,
@@ -423,7 +465,7 @@ _betas = {
         0.0,
         0.0,
     ],
-    "other_hispanic": [
+    RaceCategory.HISPANIC_OTHER: [
         0.4798624017,
         0.2593922322,
         0.4669246218,
@@ -431,7 +473,7 @@ _betas = {
         0.0,
         0.0,
     ],
-    "other_white": [
+    RaceCategory.WHITE_OTHER: [
         0.5292641686,
         0.0940103059,
         0.2186262218,
@@ -439,7 +481,7 @@ _betas = {
         -0.2880424830,
         -0.1908113865,
     ],
-    "asian": [
+    RaceCategory.ASIAN: [
         0.55263612260619,
         0.07499257592975,
         0.27638268294593,
@@ -449,33 +491,20 @@ _betas = {
     ],
 }
 
-_races = {
-    1: "white",
-    2: "black",
-    3: "hispanic",
-    4: "other_white",
-    5: "other_hispanic",
-    6: "asian",
-    7: "asian",
-    8: "asian",
-    9: "asian",
-    10: "asian",
-    11: "asian",
-}
 
 _unattributable_risk = {
     # F(t) = 1-Attributable Risk
-    "white": [0.5788413, 0.5788413],
-    "black": [0.72949880, 0.74397137],
-    "hispanic": [0.749294788397, 0.778215491668],
-    "other_white": [0.5788413, 0.5788413],
-    "other_hispanic": [0.428864989813, 0.450352338746],
-    "asian": [0.47519806426735, 0.50316401683903],
+    RaceCategory.WHITE: [0.5788413, 0.5788413],
+    RaceCategory.AFRICAN_AMERICAN: [0.72949880, 0.74397137],
+    RaceCategory.HISPANIC: [0.749294788397, 0.778215491668],
+    RaceCategory.WHITE_OTHER: [0.5788413, 0.5788413],
+    RaceCategory.HISPANIC_OTHER: [0.428864989813, 0.450352338746],
+    RaceCategory.ASIAN: [0.47519806426735, 0.50316401683903],
 }
 
 
 class RecodingError(Exception):
-    pass
+    """Raised when we fail to recode a risk factor to the cox model levels"""
 
 
 @dataclass
@@ -488,18 +517,54 @@ class GailFactors:
     age_at_first_child: int
     no_of_relatives: int
     relative_risk_factor: float
-    race: int
+    race: Race
 
 
-_HISPANICS = [3, 5]
-_ASIANS = [6, 7, 8, 9, 10, 11]
-_UNKNOWN_RESPONSE = 99
+_HISPANICS = [Race.HISPANIC_AMERICAN_US, Race.HISPANIC_AMERICAN_FOREIGN]
+_ASIANS = [
+    Race.CHINESE,
+    Race.JAPANESE,
+    Race.FILIPINO,
+    Race.HAWAIIAN,
+    Race.PACIFIC_ISLANDER,
+    Race.ASIAN_OTHER,
+]
+
+_UNKNOWN_RESPONSE = 99  # BCRAT/Gail uses this as a default response
 _MIN_AGE = 20
 _MAX_AGE = 90
 
 
+class ValidationError(Exception):
+    """Raised when we fail to validate a json api call"""
+
+
+def validate_json(json: dict) -> bool:
+    required_fields = [
+        "biopsy",
+        "number_of_biopsies",
+        "hyperplasia",
+        "age_at_menarche",
+        "age_at_first_child",
+        "no_children",
+        "family_history",
+        "ethnic_group",
+    ]
+
+    return all(map(lambda fld: fld in json, required_fields))
+
+
 def gail_from_json(json: dict) -> GailFactors:
-    """Validates past in dictionary (API data) and returns Gail model"""
+    """Validates past in dictionary (API data) and returns Gail Factors"""
+
+    json = json.copy()
+    if not validate_json(json):
+        raise ValidationError("JSON error, fields missing.")
+
+    for key in json:
+        if json[key] == "":
+            json[key] = _UNKNOWN_RESPONSE
+
     age = (
         datetime.now(timezone.utc)
         - datetime.strptime(json["date_of_birth"], "%Y-%m-%dT%H:%M:%S.%f%z")
@@ -507,31 +572,21 @@ def gail_from_json(json: dict) -> GailFactors:
 
     if json["biopsy"] == "n":
         no_of_biopsies = 0
-        hyperplasia = 99
+        hyperplasia = _UNKNOWN_RESPONSE
     else:
-        no_of_biopsies = (
-            int(json["number_of_biopsies"])
-            if "number_of_biopsies" in json and json["number_of_biopsies"] != ""
-            else 99
-        )
-        hyperplasia = (
-            int(json["hyperplasia"])
-            if "hyperplasia" in json and json["hyperplasia"] != ""
-            else 99
-        )
+        no_of_biopsies = int(json["number_of_biopsies"])
+        hyperplasia = int(json["hyperplasia"])
 
-    age_menarche = int(json["age_at_menarche"]) if json["age_at_menarche"] != "" else 99
+    age_menarche = int(json["age_at_menarche"])
+    age_at_first_child = int(json["age_at_first_child"])
+    no_of_relatives = int(json["family_history"])
 
-    age_at_first_child = (
-        int(json["age_at_first_child"])
-        if json["no_children"] == "false" and json["age_at_first_child"] != ""
-        else 99
-    )
+    ethnic_group_to_race = {"white": 1, "african_american": 2}
 
-    no_of_relatives = (
-        int(json["family_history"]) if json["family_history"] != "" else 99
-    )
-    race = 1 if json["ethnic_group"] == "white" else 2
+    if json["ethnic_group"] in ethnic_group_to_race:
+        race = ethnic_group_to_race[json["ethnic_group"]]
+    else:
+        race = _UNKNOWN_RESPONSE
 
     return recode_data_for_gail(
         age,
@@ -554,15 +609,27 @@ def recode_data_for_gail(
     race: int,
 ) -> GailFactors:
     """Recodes each risk factor into their levels for the Cox model"""
+
+    recoded_race = recode_race(race)
     return GailFactors(
         recode_age(age),
-        recode_no_of_biopsies(no_of_biopsies, hyperplasia, race),
-        recode_age_at_menarche(age_at_menarche, age, race),
-        recode_age_at_first_child(age_at_first_child, age, age_at_menarche, race),
-        recode_no_of_relatives(no_of_relatives, race),
-        relative_risk_factor(no_of_biopsies, hyperplasia, race),
-        recode_race(race),
+        recode_no_of_biopsies(no_of_biopsies, hyperplasia, recoded_race),
+        recode_age_at_menarche(age_at_menarche, age, recoded_race),
+        recode_age_at_first_child(
+            age_at_first_child, age, age_at_menarche, recoded_race
+        ),
+        recode_no_of_relatives(no_of_relatives, recoded_race),
+        relative_risk_factor(no_of_biopsies, hyperplasia, recoded_race),
+        recoded_race,
     )
+
+
+def recode_race(race: int) -> Race:
+    """Ensures valid race factor"""
+
+    if race not in range(1, 12):
+        raise RecodingError("Failed to recode race")
+    return Race(race)
 
 
 def recode_age(age: float) -> float:
@@ -588,7 +655,7 @@ def invalid_biopsy_choice(no_biopsies: int, hyperplasia: int) -> bool:
     ) or (no_biopsies in (0, _UNKNOWN_RESPONSE) and hyperplasia != _UNKNOWN_RESPONSE)
 
 
-def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: int) -> int:
+def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: Race) -> int:
     """Recodes number of biopsies from 0 to 2"""
     if race in _HISPANICS and no_of_biopsies in (0, _UNKNOWN_RESPONSE):
         return 0
@@ -603,6 +670,8 @@ def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: int) -> i
         return 1
 
     elif race in _HISPANICS and 2 <= no_of_biopsies < _UNKNOWN_RESPONSE:
+        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        #         (1) groups N_Biop ge 2 with N_Biop eq 1
         return 1
 
     elif 2 <= no_of_biopsies < _UNKNOWN_RESPONSE:
@@ -611,9 +680,11 @@ def recode_no_of_biopsies(no_of_biopsies: int, hyperplasia: int, race: int) -> i
         raise RecodingError("Failed to recode number of biopsies")
 
 
-def recode_age_at_menarche(age_at_menarche: int, age: float, race: int) -> int:
+def recode_age_at_menarche(age_at_menarche: int, age: float, race: Race) -> int:
     """Recodes age_at_menarche from 0 to 2"""
-    if race == 3:
+    if race == Race.HISPANIC_AMERICAN_US:
+        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        #         (2) eliminates  AgeMen from model for US Born hispanic women
         return 0
 
     elif age < age_at_menarche < _UNKNOWN_RESPONSE:
@@ -622,7 +693,8 @@ def recode_age_at_menarche(age_at_menarche: int, age: float, race: int) -> int:
     elif age_at_menarche < 0:
         raise RecodingError("Failed to recode age at menarche")
 
-    elif age_at_menarche < 12 and race == 2:
+    elif age_at_menarche < 12 and race == Race.AFRICAN_AMERICAN:
+        # african-american RR model from CARE study: (2) groups AgeMen=2 with AgeMen=1;
         return 1
 
     elif age_at_menarche < 12:
@@ -641,13 +713,14 @@ def recode_age_at_menarche(age_at_menarche: int, age: float, race: int) -> int:
 
 
 def recode_age_at_first_child(
-    age_at_first_child: int, age: float, age_at_menarche: int, race: int
+    age_at_first_child: int, age: float, age_at_menarche: int, race: Race
 ) -> int:
     """Recodes age at first child from 0 to 3"""
 
     UNKNOWN_RESPONSE_1st = 98
 
-    if race == 2:
+    if race == Race.AFRICAN_AMERICAN:
+        # african-american RR model from CARE study:(1) eliminates Age1st from model;
         return 0
 
     elif age_at_first_child < age_at_menarche < _UNKNOWN_RESPONSE:
@@ -663,12 +736,16 @@ def recode_age_at_first_child(
         return 1
 
     elif age_at_first_child < 30 and race in _HISPANICS:
+        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        #         (3) group Age1st=25-29 with Age1st=20-24 and code as 1
         return 1
 
     elif age_at_first_child < 30:
         return 2
 
     elif age_at_first_child < UNKNOWN_RESPONSE_1st and race in _HISPANICS:
+        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        #         (3) for   Age1st=30+, 98 (nulliparous)       code as 2
         return 2
 
     elif age_at_first_child < UNKNOWN_RESPONSE_1st:
@@ -684,7 +761,7 @@ def recode_age_at_first_child(
         raise RecodingError("Failed to recode age at first child")
 
 
-def recode_no_of_relatives(no_of_relatives: int, race: int) -> int:
+def recode_no_of_relatives(no_of_relatives: int, race: Race) -> int:
     """Recodes the number of relatives from 0 to 2"""
     if no_of_relatives == 0:
         return 0
@@ -693,6 +770,9 @@ def recode_no_of_relatives(no_of_relatives: int, race: int) -> int:
         return 1
 
     elif race in _HISPANICS + _ASIANS and no_of_relatives < _UNKNOWN_RESPONSE:
+        # for asian-americans cat 2 is pooled with cat 1
+        # hispanic RR model from San Francisco Bay Area Breast Cancer Study (SFBCS):
+        #         (4) groups N_Rels=2 with N_Rels=1;
         return 1
 
     elif no_of_relatives < _UNKNOWN_RESPONSE:
@@ -705,26 +785,16 @@ def recode_no_of_relatives(no_of_relatives: int, race: int) -> int:
         raise RecodingError("Failed to recode number of relatives")
 
 
-def recode_race(race: int) -> int:
-    """Ensures valid race factor"""
-
-    if race not in range(1, 12):
-        raise RecodingError("Failed to recode race")
-    return race
-
-
-def relative_risk_factor(no_of_biopsies: int, hyperplasia: int, race: int) -> float:
-    """Returns the hyperplasia relative risk factor"""
+def relative_risk_factor(no_of_biopsies: int, hyperplasia: int, race: Race) -> float:
+    """Returns the hyperplasia relative risk multiplicative factor"""
 
     no_of_biopsies_fac = recode_no_of_biopsies(no_of_biopsies, hyperplasia, race)
-    if no_of_biopsies_fac == 0:
+    if no_of_biopsies_fac == 0 or hyperplasia == _UNKNOWN_RESPONSE:
         return 1.00
     elif hyperplasia == 0:
         return 0.93
     elif hyperplasia == 1:
         return 1.82
-    elif hyperplasia == _UNKNOWN_RESPONSE:
-        return 1.00
 
     else:
         raise RecodingError("Failed to recode relative risk factor")
@@ -828,8 +898,6 @@ class GailModel:
         PROJ_AGE = START_AGE + PROJ_YEARS
         PIVOT_AGE = 50  # Gail's model differentiates between <50 and above
 
-        rel_risks = self.relative_risk()
-
         age_end = recode_age_end(self.factors.age, self.factors.age + years)
         interval_endpoints = (
             math.floor(self.factors.age) - START_AGE + 1,
@@ -837,12 +905,14 @@ class GailModel:
         )
 
         unattrib_risks = _unattributable_risk[_races[self.factors.race]]
+
+        rel_risks = self.relative_risk()
         one_ar_rr1 = unattrib_risks[0] * rel_risks[0]
         one_ar_rr2 = unattrib_risks[1] * rel_risks[1]
 
         one_ar_rr = [
             one_ar_rr1 if i < PIVOT_AGE else one_ar_rr2
-            for i in range(START_AGE, PROJ_AGE)
+            for i in range(START_AGE, PROJ_AGE + 1)
         ]
 
         abs_risk = 0
