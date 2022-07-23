@@ -413,6 +413,8 @@ _competing_hazards = {
 
 
 class RaceCategory(Enum):
+    """Category for beta"""
+
     WHITE = 1
     AFRICAN_AMERICAN = 2
     HISPANIC = 3
