@@ -578,7 +578,13 @@ def gail_from_json(json: dict) -> GailFactors:
         hyperplasia = int(json["hyperplasia"])
 
     age_menarche = int(json["age_at_menarche"])
-    age_at_first_child = int(json["age_at_first_child"])
+
+    no_children = bool(json["no_children"])
+    if no_children:
+        age_at_first_child = _UNKNOWN_RESPONSE
+    else:
+        age_at_first_child = int(json["age_at_first_child"])
+
     no_of_relatives = int(json["family_history"])
 
     ethnic_group_to_race = {"white": 1, "african_american": 2}
