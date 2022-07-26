@@ -9,6 +9,11 @@ class MhtType(Enum):
 
 
 class MhtRisk:
+    """
+    Calculates relative risk of taking MHT,
+    using collaborative group paper results
+    """
+
     def __init__(self, json):
         self.raw_data = json
 
