@@ -847,9 +847,8 @@ class GailModel:
             return 1 - (self.factors.age - math.floor(self.factors.age))
 
         elif number_intervals > 1 and interval == interval_endpoints[1]:
-            z1 = 1 if age_end > math.floor(age_end) else 0
-            z2 = 1 if age_end == math.floor(age_end) else 0
-            return (age_end - math.floor(age_end)) * z1 + z2
+            size = age_end - math.floor(age_end)
+            return size if size != 0 else 1
 
         elif number_intervals == 1:
             return age_end - self.factors.age
@@ -857,35 +856,35 @@ class GailModel:
             return 1
 
     def _get_incidence_rate(self, interval: int) -> float:
-        BAND_WIDTH = 5
-        idx = (interval - 1) // BAND_WIDTH
+        AGE_BAND_WIDTH = 5
+        idx = (interval - 1) // AGE_BAND_WIDTH
         return _incidence_rates[self.factors.race][idx]
 
     def _get_competing_hazard(self, interval: int) -> float:
-        BAND_WIDTH = 5
-        idx = (interval - 1) // BAND_WIDTH
+        AGE_BAND_WIDTH = 5
+        idx = (interval - 1) // AGE_BAND_WIDTH
         return _competing_hazards[self.factors.race][idx]
 
-    def _lambda_j(self, interval: int, unattrib_risk: float) -> float:
+    def _calculate_hazard(self, interval: int, unattrib_risk: float) -> float:
         incidence_rate = self._get_incidence_rate(interval)
         competing_hazard = self._get_competing_hazard(interval)
 
         return incidence_rate * unattrib_risk + competing_hazard
 
-    def _pi_j(
+    def _calculate_abs_risk_in_interval(
         self,
         interval: int,
         interval_length: float,
         unattrib_risk: float,
-        lambdaj: float,
-        cumulative_lambda: float,
+        hazard: float,
+        cumulative_hazard: float,
     ) -> float:
         incidence_rate = self._get_incidence_rate(interval)
 
         return (
-            (unattrib_risk * incidence_rate / lambdaj)
-            * math.exp(-cumulative_lambda)
-            * (1 - math.exp(-lambdaj * interval_length))
+            (unattrib_risk * incidence_rate / hazard)
+            * math.exp(-cumulative_hazard)
+            * (1 - math.exp(-hazard * interval_length))
         )
 
     def relative_risk(self) -> tuple[float, float]:
@@ -904,6 +903,13 @@ class GailModel:
 
         return (math.exp(lp1), math.exp(lp2))
 
+    def _unattrib_relative_risk(self) -> tuple[float, float]:
+        unattrib_risks = _unattributable_risk[_races[self.factors.race]]
+
+        rel_risks = self.relative_risk()
+
+        return (unattrib_risks[0] * rel_risks[0], unattrib_risks[1] * rel_risks[1])
+
     def predict(self, years: float) -> float:
         """
         Gets the probability (absolute risk) of breast cancer
@@ -911,8 +917,6 @@ class GailModel:
         given years from the starting age
         """
         START_AGE = 20
-        PROJ_YEARS = 70  # project from 20 to 90
-        PROJ_AGE = START_AGE + PROJ_YEARS
         PIVOT_AGE = 50  # Gail's model differentiates between <50 and above
 
         age_end = recode_age_end(self.factors.age, self.factors.age + years)
@@ -921,32 +925,30 @@ class GailModel:
             math.ceil(age_end) - START_AGE,
         )
 
-        unattrib_risks = _unattributable_risk[_races[self.factors.race]]
+        unattrib_risks = self._unattrib_relative_risk()
 
-        rel_risks = self.relative_risk()
-        one_ar_rr1 = unattrib_risks[0] * rel_risks[0]
-        one_ar_rr2 = unattrib_risks[1] * rel_risks[1]
-
-        one_ar_rr = [
-            one_ar_rr1 if i < PIVOT_AGE else one_ar_rr2
-            for i in range(START_AGE, PROJ_AGE + 1)
-        ]
-
-        abs_risk = 0.0
-        cum_lambda = 0.0
+        total_absolute_risk = 0.0
+        total_hazard = 0.0
         for interval in range(interval_rng[0], interval_rng[1] + 1):
             interval_length = self._calculate_interval_length(
                 interval, interval_rng, age_end
             )
 
-            unattrib_risk = one_ar_rr[interval - 1]
+            if interval <= PIVOT_AGE - START_AGE:
+                unattrib_risk = unattrib_risks[0]
+            else:
+                unattrib_risk = unattrib_risks[1]
 
-            lambdaj = self._lambda_j(interval, unattrib_risk)
-            pi_j = self._pi_j(
-                interval, interval_length, unattrib_risk, lambdaj, cum_lambda
+            hazard_in_interval = self._calculate_hazard(interval, unattrib_risk)
+
+            total_absolute_risk += self._calculate_abs_risk_in_interval(
+                interval,
+                interval_length,
+                unattrib_risk,
+                hazard_in_interval,
+                total_hazard,
             )
 
-            abs_risk += pi_j
-            cum_lambda += lambdaj * interval_length
+            total_hazard += hazard_in_interval * interval_length
 
-        return abs_risk
+        return total_absolute_risk
