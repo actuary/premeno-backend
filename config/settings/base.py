@@ -59,6 +59,11 @@ ROOT_URLCONF = "config.urls"
 # https://docs.djangoproject.com/en/dev/ref/settings/#wsgi-application
 WSGI_APPLICATION = "config.wsgi.application"
 
+# API KEYS
+# -----------------------------------------------------------------------------
+#
+CANRISK_API_USERNAME = env.str("CANRISK_API_USERNAME", "")
+CANRISK_API_PASSWORD = env.str("CANRISK_API_PASSWORD", "")
 # APPS
 # -----------------------------------------------------------------------------
 DJANGO_APPS = [

@@ -544,12 +544,11 @@ class ValidationError(Exception):
 def validate_json(json: dict) -> bool:
     required_fields = [
         "biopsy",
-        "number_of_biopsies",
-        "hyperplasia",
         "age_at_menarche",
         "age_at_first_child",
         "no_children",
-        "family_history",
+        "mother_has_cancer",
+        "number_of_sisters",
         "ethnic_group",
     ]
 
@@ -587,7 +586,8 @@ def gail_from_json(json: dict) -> GailFactors:
     else:
         age_at_first_child = int(json["age_at_first_child"])
 
-    no_of_relatives = int(json["family_history"])
+    no_of_relatives = int(json["mother_has_cancer"])
+    no_of_relatives += int(json["number_of_sisters"])
 
     ethnic_group_to_race = {"white": 1, "african_american": 2}
 
@@ -842,6 +842,7 @@ class GailModel:
     def _calculate_interval_length(
         self, interval: int, interval_endpoints: tuple[int, int], age_end: float
     ) -> float:
+        """ Gets length of given interval - e.g. [27.5, 28] = 0.5, etc."""
         number_intervals = interval_endpoints[1] - interval_endpoints[0] + 1
         if number_intervals > 1 and interval == interval_endpoints[0]:
             return 1 - (self.factors.age - math.floor(self.factors.age))
@@ -880,7 +881,8 @@ class GailModel:
         cumulative_hazard: float,
     ) -> float:
         incidence_rate = self._get_incidence_rate(interval)
-
+        
+        print(unattrib_risk, unattrib_risk * incidence_rate / hazard, hazard, math.exp(-cumulative_hazard), 1 - math.exp(-hazard * interval_length), interval_length)
         return (
             (unattrib_risk * incidence_rate / hazard)
             * math.exp(-cumulative_hazard)
