@@ -1,7 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 
-from premeno.risk_api.risk import BreastCancer, CanRiskModel
+from premeno.risk_api.risk import BreastCancer
 
 
 class BreastCancerRiskViewSet(viewsets.ViewSet):

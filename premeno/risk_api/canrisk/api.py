@@ -31,9 +31,8 @@ class CanRisk:
         })
 
     def _get_api_key(self, username: str, password: str) -> str:
-        data = { "username": username, "password": password }
-        json = self._get_post_response(f"auth-token/",
-                                    data = data)
+        data = {"username": username, "password": password}
+        json = self._get_post_response("auth-token/", data=data)
 
         try:
             return json["token"]
@@ -41,17 +40,16 @@ class CanRisk:
             raise CanRiskAPIError("Unable to parse CanRisk API token.")
 
     def _get_post_response(self, route: str, data: dict = {}) -> dict:
-        r = self.session.post(f"{BASE_URL}/{route}",
-                              data = data)
+        r = self.session.post(f"{BASE_URL}/{route}", data=data)
         if r.status_code != requests.codes.ok:
             raise CanRiskAPIError("Bad response from CanRisk API: "
                                   f"'{client.responses[r.status_code]}'")
 
         return r.json()
 
-    def boadicea(self, 
+    def boadicea(self,
                  pedigree_data: str,
-                 cancer_rates: CancerRateSource = CancerRateSource.UK, 
+                 cancer_rates: CancerRateSource = CancerRateSource.UK,
                  mut_freq: MutationFreqSource = MutationFreqSource.UK) -> dict:
         data = {
             "user_id": self.user_id,

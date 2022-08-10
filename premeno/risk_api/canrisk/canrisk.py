@@ -3,7 +3,12 @@ from typing import List, Tuple
 
 from premeno.risk_api.canrisk.file import CanRiskFile
 from premeno.risk_api.canrisk.pedigree import Diagnoses, PedigreeEntry, Sex
-from premeno.risk_api.canrisk.risk_factors import MhtStatus, OralContraceptiveData, OralContraStatus, RiskFactors
+from premeno.risk_api.canrisk.risk_factors import (
+    MhtStatus,
+    OralContraceptiveData,
+    OralContraStatus,
+    RiskFactors,
+)
 
 
 def calculate_child_info(no_children: str, age_at_first_child: str) -> Tuple[int, int]:
@@ -15,7 +20,7 @@ def calculate_child_info(no_children: str, age_at_first_child: str) -> Tuple[int
 
 def calculate_age_info(date_of_birth: str) -> Tuple[int, int]:
     dob = datetime.strptime(date_of_birth, "%Y-%m-%dT%H:%M:%S.%f%z")
-    age = int(( datetime.now(timezone.utc) - dob) / timedelta(days=365.2425))
+    age = int((datetime.now(timezone.utc) - dob) / timedelta(days=365.2425))
     year_of_birth = dob.year
 
     return age, year_of_birth
@@ -32,12 +37,12 @@ def create_mum(has_cancer: int, age_at_diagnosis: int) -> PedigreeEntry:
         mum = PedigreeEntry("fam", "mum", False, "mum", Sex.Female, 0, 0)
     else:
         mum = PedigreeEntry(
-                "fam", 
-                "mum", 
-                False, 
-                "mum", 
-                sex=Sex.Female, 
-                age=0, 
+                "fam",
+                "mum",
+                False,
+                "mum",
+                sex=Sex.Female,
+                age=0,
                 year_of_birth=0,
                 diagnoses=Diagnoses(breast_cancer_1st_age=age_at_diagnosis))
 
@@ -73,7 +78,7 @@ def calculate_alcohol_info(alcohol_units: float) -> float:
 
 def calculate_sisters(me: PedigreeEntry, json: dict) -> List[PedigreeEntry]:
     number_of_sisters = int(json["number_of_sisters"])
-    
+
     sisters = []
     for i in range(number_of_sisters):
         sister = me.sister_with_cancer(i, int(json[f"sister_age_at_diagnosis_{i}"]))
@@ -102,21 +107,19 @@ def canrisk_file_from_json(json: dict, mht_status: MhtStatus) -> CanRiskFile:
     for sis_no in range(sisters_with_cancer):
         sister_diagnosis_ages.append(int(json[f"sister_age_at_diagnosis_{sis_no}"]))
 
-    
     me = PedigreeEntry("fam", "me", True, "me", Sex.Female, age, year_of_birth, "dad", "mum")
     father = PedigreeEntry("fam", "dad", False, "dad", Sex.Male, 0, 0)
     if int(json["mother_has_cancer"]) != 1:
         json["mother_age_at_diagnosis"] = "0"
 
-    mother = create_mum(int(json["mother_has_cancer"]), int(json["mother_age_at_diagnosis"])
-    )
-                            
+    mother = create_mum(int(json["mother_has_cancer"]), int(json["mother_age_at_diagnosis"]))
+
     oc_data = calculate_oc_data(json["oral_contra"])
 
     risk_factors = RiskFactors(
-            age_at_menarche, 
-            number_of_children, 
-            age_at_first_child, 
+            age_at_menarche,
+            number_of_children,
+            age_at_first_child,
             oc_data,
             mht_status,
             round(height),

@@ -1,7 +1,8 @@
-from typing import Any, Optional, List
+from typing import Any, List, Optional
+
 
 def extract_cancer_rates(boadicea: dict) -> dict:
-    pedigree_results = boadicea["pedigree_result"][0] #only inputting one family
+    pedigree_results = boadicea["pedigree_result"][0]  # only inputting one family
 
     def extract(rates_list: List[dict]) -> List[Any]:
         return list(map(lambda rate: rate["breast cancer risk"]["decimal"],
