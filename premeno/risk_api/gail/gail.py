@@ -881,8 +881,7 @@ class GailModel:
         cumulative_hazard: float,
     ) -> float:
         incidence_rate = self._get_incidence_rate(interval)
-        
-        print(unattrib_risk, unattrib_risk * incidence_rate / hazard, hazard, math.exp(-cumulative_hazard), 1 - math.exp(-hazard * interval_length), interval_length)
+
         return (
             (unattrib_risk * incidence_rate / hazard)
             * math.exp(-cumulative_hazard)

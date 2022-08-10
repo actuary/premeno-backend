@@ -1,7 +1,8 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 
 from premeno.risk_api.canrisk.utils import header_line
+
 
 class OralContraStatus(Enum):
     Never = 'N'
@@ -11,7 +12,7 @@ class OralContraStatus(Enum):
 
 @dataclass
 class OralContraceptiveData:
-    years_of_use: int 
+    years_of_use: int
     status: OralContraStatus = OralContraStatus.Never
 
     def __str__(self) -> str:
@@ -25,10 +26,10 @@ class MhtStatus(Enum):
     Never = 'N'
     Former = 'F'
     Oestrogen = 'E'
-    Combined = 'C' # or other
+    Combined = 'C'  # or other
 
 
-@dataclass 
+@dataclass
 class RiskFactors:
     age_at_menarche: int
     number_of_children: int

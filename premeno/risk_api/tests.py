@@ -1,7 +1,7 @@
 from pytest import approx, raises
 
-import premeno.risk_api.gail as gail
-from premeno.risk_api.gail import GailModel, Race, bucket
+import premeno.risk_api.gail.gail as gail
+from premeno.risk_api.gail.gail import GailModel, Race, bucket
 
 
 class TestBuckets:

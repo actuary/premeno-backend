@@ -1,15 +1,17 @@
-from enum import Enum
 from dataclasses import dataclass
+from enum import Enum
 from typing import List
 
 
 class Sex(Enum):
+    """ Sex of patient """
     Male = "M"
     Female = "F"
 
 
 @dataclass
 class Diagnoses:
+    """ Ages at diagnosis for relevant cancers """
     breast_cancer_1st_age: int = 0
     breast_cancer_2nd_age: int = 0
     ovarian_cancer_age: int = 0
@@ -25,6 +27,7 @@ class Diagnoses:
 
 
 class ReceptorStatus(Enum):
+    """ CanRisk Receptors status (e.g. oestrogen positive) """
     Unknown = "0"
     Positive = "P"
     Negative = "N"
@@ -32,6 +35,7 @@ class ReceptorStatus(Enum):
 
 @dataclass
 class Pathology:
+    """ Results of CanRisk receptors """
     oestrogen_receptor: int = 0
     progesterone_recepter: int = 0
     her2: int = 0
@@ -47,17 +51,21 @@ class Pathology:
 
 
 class GeneTestResult(Enum):
+    """ Result of gene tests (BRCA etc.) """
     Untested = "0"
     Positive = "P"
     Negative = "N"
 
 
 class GeneTestType(Enum):
+    """ CanRisk API gene test type - default untested """
     Untested = "0"
     MutationSearch = "S"
     Direct = "T"
 
+
 class GeneTest:
+    """ CanRisk GeneTest for patient """
     test_type: GeneTestType = GeneTestType.Untested
     result: GeneTestResult = GeneTestResult.Untested
 
@@ -67,15 +75,16 @@ class GeneTest:
 
 @dataclass
 class GeneTests:
-    brca1: GeneTest = GeneTest() 
-    brca2: GeneTest = GeneTest() 
-    palb2: GeneTest = GeneTest() 
-    atm: GeneTest = GeneTest() 
-    chek2: GeneTest = GeneTest() 
-    bard1: GeneTest = GeneTest() 
-    rad51d: GeneTest = GeneTest() 
-    rad51c: GeneTest = GeneTest() 
-    brip1: GeneTest = GeneTest() 
+    """ Set of specific gene tests relevant to breast cancer """
+    brca1: GeneTest = GeneTest()
+    brca2: GeneTest = GeneTest()
+    palb2: GeneTest = GeneTest()
+    atm: GeneTest = GeneTest()
+    chek2: GeneTest = GeneTest()
+    bard1: GeneTest = GeneTest()
+    rad51d: GeneTest = GeneTest()
+    rad51c: GeneTest = GeneTest()
+    brip1: GeneTest = GeneTest()
 
     def __str__(self) -> str:
         return (f"{self.brca1}\t"
@@ -91,6 +100,7 @@ class GeneTests:
 
 @dataclass
 class PedigreeEntry:
+    """ Represents an entry in the pedigree file """
     fam_id: str
     individ_id: str
     is_target: bool
@@ -105,8 +115,8 @@ class PedigreeEntry:
 
     age_on_death: int = 0
 
-    mz_twin: int = 0 # monoziotic twin - not used in our model
-    ashkenazi: int = 0 # also ignore this
+    mz_twin: int = 0  # monoziotic twin - not used in our model
+    ashkenazi: int = 0  # also ignore this
 
     diagnoses: Diagnoses = Diagnoses()
     pathology: Pathology = Pathology()
@@ -115,31 +125,31 @@ class PedigreeEntry:
     @property
     def dead(self) -> int:
         return 0 if self.age_on_death == 0 else 1
-    
+
     def husband(self) -> "PedigreeEntry":
-        return PedigreeEntry(self.fam_id, 
-                             f"husb", 
-                             False, 
-                             "NA", 
-                             Sex.Male, 
+        return PedigreeEntry(self.fam_id,
+                             "husb",
+                             False,
+                             "NA",
+                             Sex.Male,
                              age=0,
                              year_of_birth=0
                              )
-    
+
     def sister_with_cancer(self, sister_no: int, age_at_diagnosis: int) -> "PedigreeEntry":
         """ Returns a sister entry with cancer at given age. Sets her age
             to age at diagnosis. This understates the risk we are only
-            giving her one cancer, and by saying she is at the age of diagnosis 
-            we're removing any possible information about her surviving beyond 
-            this without a contralateral diagnosis. Of course, this second diagnosis 
-            would increase the risk of cancer for the woman in question so this 
+            giving her one cancer, and by saying she is at the age of diagnosis
+            we're removing any possible information about her surviving beyond
+            this without a contralateral diagnosis. Of course, this second diagnosis
+            would increase the risk of cancer for the woman in question so this
             is understating the risk, but we're hoping by not too much.
         """
-        return PedigreeEntry(self.fam_id, 
-                             f"sis{sister_no}", 
-                             False, 
-                             "NA", 
-                             Sex.Female, 
+        return PedigreeEntry(self.fam_id,
+                             f"sis{sister_no}",
+                             False,
+                             "NA",
+                             Sex.Female,
                              age=age_at_diagnosis,
                              year_of_birth=self.year_of_birth + (self.age - age_at_diagnosis),
                              father_id=self.father_id,
@@ -149,7 +159,7 @@ class PedigreeEntry:
 
     def child(self, age_at_first_live_birth: int, child_no: int) -> "PedigreeEntry":
         return PedigreeEntry(
-                fam_id=self.fam_id, 
+                fam_id=self.fam_id,
                 individ_id=f"ch{child_no}",
                 is_target=False,
                 name="NA",
@@ -161,7 +171,8 @@ class PedigreeEntry:
                 )
 
     def children(self, age_at_first_live_birth: int, no_of_children: int) -> List["PedigreeEntry"]:
-        return [self.child(age_at_first_live_birth, child_no) for child_no in range(no_of_children)]
+        return [self.child(age_at_first_live_birth,
+                           child_no) for child_no in range(no_of_children)]
 
     def __str__(self) -> str:
         return (f"{self.fam_id}\t"
