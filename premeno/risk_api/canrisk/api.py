@@ -43,7 +43,8 @@ class CanRisk:
         r = self.session.post(f"{BASE_URL}/{route}", data=data)
         if r.status_code != requests.codes.ok:
             raise CanRiskAPIError("Bad response from CanRisk API: "
-                                  f"'{client.responses[r.status_code]}'")
+                                  f"'{client.responses[r.status_code]}': "
+                                  f"{r.text}")
 
         return r.json()
 
