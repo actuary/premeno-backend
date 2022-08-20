@@ -66,6 +66,8 @@ CANRISK_API_USERNAME = env.str("CANRISK_API_USERNAME", "")
 CANRISK_API_PASSWORD = env.str("CANRISK_API_PASSWORD", "")
 # APPS
 # -----------------------------------------------------------------------------
+WKHTMLTOPDF = env.str("WKHTMLTOPDF", "/usr/bin/wkhtmltopdf")
+
 DJANGO_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
