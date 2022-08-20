@@ -49,23 +49,6 @@ def create_mum(has_cancer: int, age_at_diagnosis: int) -> PedigreeEntry:
     return mum
 
 
-def calculate_height_info(json: dict) -> float:
-    feet_to_cm = 30.48
-
-    if json["height_unit"] == "cm":
-        return float(json["height"])
-
-    return (float(json["height_ft"]) + float(json["height_in"])) * feet_to_cm
-
-
-def calculate_weight_info(weight_unit: str, weight: float) -> float:
-    if weight_unit == "kg":
-        return weight
-
-    KG_TO_LBS = 2.205
-    return weight / KG_TO_LBS
-
-
 def calculate_bmi(height_cm: float, weight_kg: float) -> float:
     return round(weight_kg / ((height_cm / 100.0) ** 2), 1)
 
@@ -93,13 +76,18 @@ def canrisk_file_from_json(json: dict, mht_status: MhtStatus) -> CanRiskFile:
 
     age, year_of_birth = calculate_age_info(json["date_of_birth"])
     age_at_menarche = int(json["age_at_menarche"])
-    height = calculate_height_info(json)
-    weight = calculate_weight_info(json["weight_unit"], float(json["weight"]))
+    height = float(json["height"])
+    weight = float(json["weight"])
     bmi = calculate_bmi(height, weight)
     alcohol_grams = calculate_alcohol_info(float(json["alcohol"]))
 
-    number_of_children, age_at_first_child = calculate_child_info(json["no_children"],
-                                                                  json["age_at_first_child"])
+    if "age_at_first_child" in json:
+        number_of_children, age_at_first_child = calculate_child_info(json["no_children"],
+                                                                      json["age_at_first_child"])
+    else:
+        number_of_children, age_at_first_child = calculate_child_info(json["no_children"],
+                                                                      "0")
+
 
     sisters_with_cancer = int(json["number_of_sisters"])
 
