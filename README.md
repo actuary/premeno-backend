@@ -1,4 +1,4 @@
-# Premeno
+# Mascot
 
 MHT Risk Assessment Tool
 
