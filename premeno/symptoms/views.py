@@ -1,8 +1,8 @@
 from django.http import HttpResponse
-
 from rest_framework.viewsets import ViewSet
 
 from premeno.symptoms.utils import render_to_pdf
+
 
 class RiskReportViewSet(ViewSet):
     authentication_classes = []
@@ -22,4 +22,3 @@ class SymptomReportViewSet(ViewSet):
         context["total"] = sum(int(symptom["value"]) for symptom in context["symptoms"])
         pdf = render_to_pdf("SymptomReportTemplate.html", context)
         return HttpResponse(pdf, content_type="application/pdf")
-
