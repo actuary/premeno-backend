@@ -88,7 +88,6 @@ def canrisk_file_from_json(json: dict, mht_status: MhtStatus) -> CanRiskFile:
         number_of_children, age_at_first_child = calculate_child_info(json["no_children"],
                                                                       "0")
 
-
     sisters_with_cancer = int(json["number_of_sisters"])
 
     sister_diagnosis_ages = []
