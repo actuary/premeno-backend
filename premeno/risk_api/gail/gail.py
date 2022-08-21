@@ -842,7 +842,7 @@ class GailModel:
     def _calculate_interval_length(
         self, interval: int, interval_endpoints: tuple[int, int], age_end: float
     ) -> float:
-        """ Gets length of given interval - e.g. [27.5, 28] = 0.5, etc."""
+        """Gets length of given interval - e.g. [27.5, 28] = 0.5, etc."""
         number_intervals = interval_endpoints[1] - interval_endpoints[0] + 1
         if number_intervals > 1 and interval == interval_endpoints[0]:
             return 1 - (self.factors.age - math.floor(self.factors.age))

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from typing import List
 
 from premeno.risk_api.canrisk.pedigree import PedigreeEntry
 from premeno.risk_api.canrisk.risk_factors import RiskFactors
@@ -12,7 +11,7 @@ class CanRiskFile:
     pedigree: PedigreeEntry
     mother: PedigreeEntry
     father: PedigreeEntry
-    sisters: List[PedigreeEntry] = field(default_factory=list)
+    sisters: list[PedigreeEntry] = field(default_factory=list)
 
     def _version_info(self) -> str:
         return "CanRisk 2.0"
@@ -33,7 +32,9 @@ class CanRiskFile:
         pedigree_data.extend(self.sisters)
 
         pedigree_file = "\n".join([str(person) for person in pedigree_data])
-        return (f"{header_line(self._version_info(), None)}\n"
-                f"{self.risk_factors.make_header()}"
-                f"{header_line(PedigreeEntry.header(), None)}\n"
-                f"{pedigree_file}")
+        return (
+            f"{header_line(self._version_info(), None)}\n"
+            f"{self.risk_factors.make_header()}"
+            f"{header_line(PedigreeEntry.header(), None)}\n"
+            f"{pedigree_file}"
+        )
