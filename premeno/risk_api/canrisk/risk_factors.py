@@ -5,9 +5,9 @@ from premeno.risk_api.canrisk.utils import header_line
 
 
 class OralContraStatus(Enum):
-    Never = 'N'
-    Former = 'F'
-    Current = 'C'
+    Never = "N"
+    Former = "F"
+    Current = "C"
 
 
 @dataclass
@@ -23,10 +23,10 @@ class OralContraceptiveData:
 
 
 class MhtStatus(Enum):
-    Never = 'N'
-    Former = 'F'
-    Oestrogen = 'E'
-    Combined = 'C'  # or other
+    Never = "N"
+    Former = "F"
+    Oestrogen = "E"
+    Combined = "C"  # or other
 
 
 @dataclass
@@ -53,12 +53,14 @@ class RiskFactors:
         return f"{header_line('menopause', self.age_at_menopause)}\n"
 
     def make_header(self) -> str:
-        return (f"{header_line('menarche', self.age_at_menarche)}\n"
-                f"{header_line('parity', self.number_of_children)}\n"
-                f"{self._first_live_birth_header()}"
-                f"{header_line('oc_use', self.oral_contraceptive_use)}\n"
-                f"{header_line('mht_use', self.mht_use.value)}\n"
-                f"{header_line('BMI', self.bmi)}\n"
-                f"{header_line('alcohol', self.alcohol_grams)}\n"
-                f"{self._age_at_menopause_header()}"
-                f"{header_line('height', self.height_cm)}\n")
+        return (
+            f"{header_line('menarche', self.age_at_menarche)}\n"
+            f"{header_line('parity', self.number_of_children)}\n"
+            f"{self._first_live_birth_header()}"
+            f"{header_line('oc_use', self.oral_contraceptive_use)}\n"
+            f"{header_line('mht_use', self.mht_use.value)}\n"
+            f"{header_line('BMI', self.bmi)}\n"
+            f"{header_line('alcohol', self.alcohol_grams)}\n"
+            f"{self._age_at_menopause_header()}"
+            f"{header_line('height', self.height_cm)}\n"
+        )

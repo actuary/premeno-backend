@@ -39,13 +39,19 @@ class CanRiskModel(RiskModel):
 
         canrisk_file_with_mht = canrisk_file_from_json(json, mht_type)
 
-        api = CanRisk(username=settings.CANRISK_API_USERNAME,
-                      password=settings.CANRISK_API_PASSWORD)
-        self.results_no_mht = extract_cancer_rates(api.boadicea(str(canrisk_file_no_mht)))
-        self.results_with_mht = extract_cancer_rates(api.boadicea(str(canrisk_file_with_mht)))
+        api = CanRisk(
+            username=settings.CANRISK_API_USERNAME,
+            password=settings.CANRISK_API_PASSWORD,
+        )
+        self.results_no_mht = extract_cancer_rates(
+            api.boadicea(str(canrisk_file_no_mht))
+        )
+        self.results_with_mht = extract_cancer_rates(
+            api.boadicea(str(canrisk_file_with_mht))
+        )
 
     def background_risk(self, years: int):
         return self.results_no_mht["individual"][4]
 
     def relative_risk(self, years: int):
-        return self.results_with_mht["individual"][4]/self.background_risk(5)
+        return self.results_with_mht["individual"][4] / self.background_risk(5)
