@@ -5,7 +5,7 @@ MHT Risk Assessment Tool
 [![Built with Cookiecutter Django](https://img.shields.io/badge/built%20with-Cookiecutter%20Django-ff69b4.svg?logo=cookiecutter)](https://github.com/cookiecutter/cookiecutter-django/)
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 
-### About 
+### About
 https://premeno-frontend.herokuapp.com/about
 
 MAsCoT has been built to communicate the risks and benefits of taking menopausal hormone therapy (MHT), also known as
@@ -15,11 +15,11 @@ decision making between a doctor and their patient.
 
 This is the repository from the backend of the Mascot app. The frontend can be found
 [here](https://github.com/actuary/premeno-frontend). The backend provides a service (built using the Django REST
-framework) which calculates risks and sends back reports to the frontend application. This 
+framework) which calculates risks and sends back reports to the frontend application. This
 backend can be deployed separately as a standalone API.
 
 Currently, only breast cancer risk is considered, and the hope is to expand to other risks (upside risks as well as
-downside risks). The breast cancer risk can be calculated one of two ways, using a modified Gail model, or using 
+downside risks). The breast cancer risk can be calculated one of two ways, using a modified Gail model, or using
 the CanRisk tool. As this is only a pilot project, we don't make any statements about the accuracy of such models,
 however, we hope to be able to do so in future versions.
 
@@ -27,7 +27,7 @@ The tool is built using Django and Postgres with a responsive React front-end.
 
 ### Acknowledgements
 This tool can make use of the CanRisk tool web-services ([canrisk.org](https://www.canrisk.org/about/)). The CanRisk tool is supported by grant PPRPGM-Nov20\100002 from
-Cancer Research UK. Citations are below: 
+Cancer Research UK. Citations are below:
 
 [1] Carver, Tim et al. "CanRisk Tool-A Web Interface for the Prediction of Breast and Ovarian Cancer Risk and the Likelihood of Carrying Genetic Pathogenic Variants." Cancer epidemiology, biomarkers & prevention : a publication of the American Association for Cancer Research, cosponsored by the American Society of Preventive Oncology vol. 30,3 (2021): 469-473. doi:10.1158/1055-9965.EPI-20-1319
 [2] Lee, Andrew et al. "BOADICEA: a comprehensive breast cancer risk prediction model incorporating genetic and
@@ -223,4 +223,4 @@ Tests and coverage can be run:
 $ coverage run -m pytest
 $ coverage html
 $ google-chrome htmlcov/index.html
-```  
+```
