@@ -1,4 +1,4 @@
-The code in the gail module here is heavily based (though it might not look recognisable) 
+The code in the gail module here is heavily based (though it might not look recognisable)
 on the work of Fanni Zhang, using a GPL licence. Details of their R package is below:
 
 Package: BCRA
