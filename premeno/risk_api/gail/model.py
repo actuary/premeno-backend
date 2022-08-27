@@ -82,7 +82,11 @@ class GailModel:
             + self.factors.age_at_first_child * beta[2]
             + self.factors.number_of_relatives * beta[3]
             + self.factors.number_of_biopsies * age_factor(at_age) * beta[4]
-            + (self.factors.age_at_first_child * self.factors.number_of_relatives * beta[5])
+            + (
+                self.factors.age_at_first_child
+                * self.factors.number_of_relatives
+                * beta[5]
+            )
             + math.log(self.factors.relative_risk_factor)
         )
 
@@ -110,7 +114,9 @@ class GailModel:
         total_absolute_risk = 0.0
         total_hazard = 0.0
         for interval in range(interval_rng[0], interval_rng[1] + 1):
-            interval_length = self._calculate_interval_length(interval, interval_rng, age_end)
+            interval_length = self._calculate_interval_length(
+                interval, interval_rng, age_end
+            )
             current_age = START_AGE + interval
             unattrib_risk = self._unattrib_relative_risk(current_age)
 

@@ -20,7 +20,7 @@ class Race(Enum):
 
 
 class RaceCategory(Enum):
-    """Category for parameter lookups """
+    """Category for parameter lookups"""
 
     WHITE = 1
     AFRICAN_AMERICAN = 2
@@ -33,7 +33,7 @@ class RaceCategory(Enum):
 """ Map questionnaire group to a Gail race """
 ETHNIC_GROUP_TO_RACE = {
     EthnicGroup.WHITE: Race.WHITE,
-    EthnicGroup.OTHER: Race.AFRICAN_AMERICAN
+    EthnicGroup.OTHER: Race.AFRICAN_AMERICAN,
 }
 
 

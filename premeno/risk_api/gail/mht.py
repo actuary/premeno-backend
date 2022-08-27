@@ -12,7 +12,7 @@ def collab_relative_risk(mht_type: MhtFormulation) -> float:
     factors = {
         MhtFormulation.NONE: 1,
         MhtFormulation.OESTROGEN: 1.3,
-        MhtFormulation.COMBINED: 2.0
+        MhtFormulation.COMBINED: 2.0,
     }
 
     return factors[mht_type]
