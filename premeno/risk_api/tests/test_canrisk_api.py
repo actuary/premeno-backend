@@ -22,14 +22,13 @@ class TestCanRiskAPI:
                 status_code=200,
                 json={"token": "notarealtoken"},
             )
-            tmp = settings.CANRISK_API_TOKEN
             settings.CANRISK_API_TOKEN = ""
             canrisk = CanRisk("dv21", "password123")
-            settings.CANRISK_API_TOKEN = tmp
             assert canrisk.user_id == "dv21"
             assert canrisk.api_key == "notarealtoken"
             assert canrisk.session.headers["Authorization"] == "token notarealtoken"
 
+            settings.CANRISK_API_TOKEN = "abc"
             canrisk = CanRisk("dv21", "password123")
             assert canrisk.api_key == settings.CANRISK_API_TOKEN
 
@@ -85,17 +84,20 @@ class TestCanRiskAPI:
                 status_code=200,
                 json={"token": "notarealtoken"},
             )
+            canrisk = CanRisk("dv21", "password123")
+
             mock.post(
                 "https://www.canrisk.org/boadicea/",
                 status_code=200,
                 json={"test": "TEST"},
             )
+            assert canrisk.boadicea("fakepedigreedata") == {"test": "TEST"}
+
             mock.post(
                 "https://www.canrisk.org/boadicea/",
                 status_code=200,
                 json={"test": "TEST_DIFFERENT"},
             )
-            canrisk = CanRisk("dv21", "password123")
             # caches the first one
             assert canrisk.boadicea("fakepedigreedata") == {"test": "TEST"}
             settings.CANRISK_API_CACHE = False
