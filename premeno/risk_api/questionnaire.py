@@ -138,18 +138,10 @@ class Questionnaire(BaseModel):
             return v
 
         if values.get("nulliparous"):
-            raise ValueError(
-                "Nulliparous (no children) but has value for age at first child"
-            )
+            raise ValueError("Nulliparous (no children) but has value for age at first child")
 
-        if (
-            not values.get("age_at_menarche")
-            < v
-            < age_from_date(values.get("date_of_birth"))
-        ):
-            raise ValueError(
-                "Age at first child must be between age at menarche and current age"
-            )
+        if not values.get("age_at_menarche") < v < age_from_date(values.get("date_of_birth")):
+            raise ValueError("Age at first child must be between age at menarche and current age")
 
         return v
 
@@ -177,14 +169,9 @@ class Questionnaire(BaseModel):
             return v
 
         if values.get("number_of_biopsies") == BiopsyStatus.UNKNOWN:
-            raise ValueError(
-                "If number of biopsies is unknown, can't have atypical hyperplasia"
-            )
+            raise ValueError("If number of biopsies is unknown, can't have atypical hyperplasia")
 
-        if (
-            values.get("number_of_biopsies") == BiopsyStatus.NONE
-            and v == HyperplasiaStatus.SOME
-        ):
+        if values.get("number_of_biopsies") == BiopsyStatus.NONE and v == HyperplasiaStatus.SOME:
             raise ValueError("Can't have a biopsy with hyperplasia without a biopsy")
 
         return v
@@ -202,17 +189,13 @@ class Questionnaire(BaseModel):
             return None
 
         if not 0 < v < 120:
-            raise ValueError(
-                "Mother's age of breast cancer diagnois should be between 0 and 120"
-            )
+            raise ValueError("Mother's age of breast cancer diagnois should be between 0 and 120")
 
         return v
 
     @validator("sisters_ages_at_diagnosis", each_item=True)
     def check_each_sister_age_at_diagnosis(cls, v) -> int:
         if not 0 < v < 120:
-            raise ValueError(
-                "Sister's age of breast cancer diagnois should be between 0 and 120"
-            )
+            raise ValueError("Sister's age of breast cancer diagnois should be between 0 and 120")
 
         return v

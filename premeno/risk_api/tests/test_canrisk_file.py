@@ -2,11 +2,7 @@ from unittest.mock import patch
 
 from premeno.risk_api.canrisk.file import CanRiskFile, create_canrisk_file, make_family
 from premeno.risk_api.canrisk.pedigree import PedigreeEntry, Sex
-from premeno.risk_api.canrisk.risk_factors import (
-    MhtStatus,
-    OralContraceptiveData,
-    RiskFactors,
-)
+from premeno.risk_api.canrisk.risk_factors import MhtStatus, OralContraceptiveData, RiskFactors
 from premeno.risk_api.canrisk.utils import header_line
 from premeno.risk_api.questionnaire import Questionnaire
 
@@ -27,9 +23,7 @@ class TestCanRiskFile:
     @patch("premeno.risk_api.canrisk.pedigree.PedigreeEntry.husband")
     @patch("premeno.risk_api.canrisk.pedigree.PedigreeEntry.father")
     @patch("premeno.risk_api.canrisk.pedigree.PedigreeEntry.mother")
-    def test_make_family(
-        self, mother_fn, father_fn, husband_fn, child_fn, sisters_fn
-    ) -> None:
+    def test_make_family(self, mother_fn, father_fn, husband_fn, child_fn, sisters_fn) -> None:
         mother_fn.return_value = self.TEST_MOTHER
         father_fn.return_value = self.TEST_FATHER
         husband_fn.return_value = self.TEST_HUSBAND
@@ -47,9 +41,7 @@ class TestCanRiskFile:
         assert len(family) == 7
 
     def test_canrisk_file(self) -> None:
-        rf = RiskFactors(
-            13, 1, 26, OralContraceptiveData(5), MhtStatus.Never, 170, 21.4, 80, 56
-        )
+        rf = RiskFactors(13, 1, 26, OralContraceptiveData(5), MhtStatus.Never, 170, 21.4, 80, 56)
         pedigrees = [self.TEST_PEDIGREE, self.TEST_MOTHER, self.TEST_FATHER]
         pedigree_file = "\n".join([str(person) for person in pedigrees])
         file = CanRiskFile(rf, pedigrees)
@@ -81,9 +73,7 @@ class TestCanRiskFile:
         }
         questionnaire = Questionnaire(**data)
         mht = MhtStatus.Never
-        risk_factors = RiskFactors(
-            13, 0, None, OralContraceptiveData(5), mht, 170, 24.2, 0, 0
-        )
+        risk_factors = RiskFactors(13, 0, None, OralContraceptiveData(5), mht, 170, 24.2, 0, 0)
         family = make_family(
             PedigreeEntry("me", True, "me", Sex.Female, 62, 1960, "dad", "mum"),
             None,
@@ -91,6 +81,4 @@ class TestCanRiskFile:
             [],
         )
 
-        assert create_canrisk_file(questionnaire, mht) == CanRiskFile(
-            risk_factors, family
-        )
+        assert create_canrisk_file(questionnaire, mht) == CanRiskFile(risk_factors, family)

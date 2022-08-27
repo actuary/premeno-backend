@@ -67,9 +67,7 @@ def create_canrisk_file(data: Questionnaire, mht_status: MhtStatus) -> CanRiskFi
         data.age_at_menarche,
         data.number_of_children,
         data.age_at_first_child,
-        OralContraceptiveData(
-            5, ORAL_CONTRACEPTIVE_MAPPING[data.oral_contraception_use]
-        ),
+        OralContraceptiveData(5, ORAL_CONTRACEPTIVE_MAPPING[data.oral_contraception_use]),
         mht_status,
         round(data.height),
         calculate_bmi(data.height, data.weight),

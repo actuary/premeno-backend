@@ -24,47 +24,33 @@ class TestPedigreeEntry:
         assert str(p.GeneTest()) == "0:0"
 
     def test_genetest_populated_str(self) -> None:
-        assert (
-            str(p.GeneTest(p.GeneTestType.Direct, p.GeneTestResult.Positive)) == "T:P"
-        )
+        assert str(p.GeneTest(p.GeneTestType.Direct, p.GeneTestResult.Positive)) == "T:P"
 
     def test_genetests_default_str(self) -> None:
         assert str(p.GeneTests()) == "0:0\t0:0\t0:0\t0:0\t0:0\t0:0\t0:0\t0:0\t0:0\t"
 
     def test_genetests_populated_str(self) -> None:
         atm = p.GeneTest(p.GeneTestType.Direct, p.GeneTestResult.Positive)
-        assert (
-            str(p.GeneTests(atm=atm)) == "0:0\t0:0\t0:0\tT:P\t0:0\t0:0\t0:0\t0:0\t0:0\t"
-        )
+        assert str(p.GeneTests(atm=atm)) == "0:0\t0:0\t0:0\tT:P\t0:0\t0:0\t0:0\t0:0\t0:0\t"
 
     def test_pedigree_entry_dead(self) -> None:
-        pedigree = p.PedigreeEntry(
-            "me", True, "me", p.Sex.Female, 56, 1965, age_on_death=56
-        )
+        pedigree = p.PedigreeEntry("me", True, "me", p.Sex.Female, 56, 1965, age_on_death=56)
         assert pedigree.dead
 
-        pedigree = p.PedigreeEntry(
-            "me", True, "me", p.Sex.Female, 56, 1965, age_on_death=0
-        )
+        pedigree = p.PedigreeEntry("me", True, "me", p.Sex.Female, 56, 1965, age_on_death=0)
         assert not pedigree.dead
 
     def test_pedigree_husband(self) -> None:
         pedigree = self.TEST_PEDIGREE
-        assert pedigree.husband() == p.PedigreeEntry(
-            "husb", False, "NA", p.Sex.Male, 0, 0
-        )
+        assert pedigree.husband() == p.PedigreeEntry("husb", False, "NA", p.Sex.Male, 0, 0)
 
     def test_pedigree_father(self) -> None:
         pedigree = self.TEST_PEDIGREE
-        assert pedigree.father() == p.PedigreeEntry(
-            "dad", False, "dad", p.Sex.Male, 0, 0
-        )
+        assert pedigree.father() == p.PedigreeEntry("dad", False, "dad", p.Sex.Male, 0, 0)
 
     def test_pedigree_mother(self) -> None:
         pedigree = self.TEST_PEDIGREE
-        assert pedigree.mother(None) == p.PedigreeEntry(
-            "mum", False, "mum", p.Sex.Female, 0, 0
-        )
+        assert pedigree.mother(None) == p.PedigreeEntry("mum", False, "mum", p.Sex.Female, 0, 0)
         assert pedigree.mother(56) == p.PedigreeEntry(
             "mum",
             False,

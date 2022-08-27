@@ -64,9 +64,7 @@ class TestQuestionnaire:
         assert questionnaire.year_of_birth == 1960
 
     def test_age_from_date(self) -> None:
-        assert age_from_date(date(1960, 8, 20), date(2022, 8, 20)) == approx(
-            22645 / 365.2425
-        )
+        assert age_from_date(date(1960, 8, 20), date(2022, 8, 20)) == approx(22645 / 365.2425)
 
     def test_age(self) -> None:
         data = self.data.copy()

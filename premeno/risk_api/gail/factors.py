@@ -2,11 +2,7 @@ from typing import Optional
 
 from premeno.risk_api.gail.errors import FactorError, RecodingError
 from premeno.risk_api.gail.race import ASIANS, ETHNIC_GROUP_TO_RACE, HISPANICS, Race
-from premeno.risk_api.questionnaire import (
-    BiopsyStatus,
-    HyperplasiaStatus,
-    Questionnaire,
-)
+from premeno.risk_api.questionnaire import BiopsyStatus, HyperplasiaStatus, Questionnaire
 
 _MIN_AGE = 25  # BCRAT mention 35 but use 25 in their package. Instead, we'll use 25
 _MAX_AGE = 80
@@ -58,20 +54,14 @@ class GailFactors:
         race = ETHNIC_GROUP_TO_RACE[data.ethnic_group]
         biops = recode_number_of_biopsies(data.number_of_biopsies, race)
         menarche = recode_age_at_menarche(data.age_at_menarche, race)
-        first_child = recode_age_at_first_child(
-            data.nulliparous, data.age_at_first_child, race
-        )
+        first_child = recode_age_at_first_child(data.nulliparous, data.age_at_first_child, race)
 
-        num_rels = recode_number_of_relatives(
-            data.number_of_relatives_with_cancer, race
-        )
+        num_rels = recode_number_of_relatives(data.number_of_relatives_with_cancer, race)
         rr_fac = hyperplasia_relative_risk(
             data.number_of_biopsies, data.biopsies_with_hyperplasia, race
         )
 
-        return GailFactors(
-            data.age, biops, menarche, first_child, num_rels, rr_fac, race
-        )
+        return GailFactors(data.age, biops, menarche, first_child, num_rels, rr_fac, race)
 
 
 def recode_number_of_biopsies(number_of_biopsies: BiopsyStatus, race: Race) -> int:
@@ -96,18 +86,12 @@ def recode_age_at_menarche(age_at_menarche: Optional[int], race: Race) -> int:
     Recodes age_at_menarche from 0 to 2. Assumes valid age at menarche (
     i.e. less than current age and not negative) as validated by questionnaire
     """
-    if (
-        age_at_menarche is None
-        or age_at_menarche >= 14
-        or race == Race.HISPANIC_AMERICAN_US
-    ):
+    if age_at_menarche is None or age_at_menarche >= 14 or race == Race.HISPANIC_AMERICAN_US:
         # hispanic RR model from San Fran Bay Area Breast Cancer Study (SFBCS):
         #         (2) eliminates  AgeMen from model for US Born hispanic women
         return 0
 
-    elif age_at_menarche >= 12 or (
-        age_at_menarche < 12 and race == Race.AFRICAN_AMERICAN
-    ):
+    elif age_at_menarche >= 12 or (age_at_menarche < 12 and race == Race.AFRICAN_AMERICAN):
         # african-american RR model from CARE study:
         #         (2) groups AgeMen=2 with AgeMen=1;
         return 1

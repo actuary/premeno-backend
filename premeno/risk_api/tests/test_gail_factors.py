@@ -10,11 +10,7 @@ from premeno.risk_api.gail.factors import (
     recode_number_of_relatives,
 )
 from premeno.risk_api.gail.race import Race
-from premeno.risk_api.questionnaire import (
-    BiopsyStatus,
-    HyperplasiaStatus,
-    Questionnaire,
-)
+from premeno.risk_api.questionnaire import BiopsyStatus, HyperplasiaStatus, Questionnaire
 
 
 class TestGailFactors:
@@ -98,13 +94,8 @@ class TestRecodings:
     def test_recode_number_of_biopsies(self) -> None:
         assert recode_number_of_biopsies(BiopsyStatus.NONE, Race.WHITE) == 0
         assert recode_number_of_biopsies(BiopsyStatus.ONE, Race.WHITE) == 1
-        assert (
-            recode_number_of_biopsies(BiopsyStatus.ONE, Race.HISPANIC_AMERICAN_US) == 1
-        )
-        assert (
-            recode_number_of_biopsies(BiopsyStatus.MULTIPLE, Race.HISPANIC_AMERICAN_US)
-            == 1
-        )
+        assert recode_number_of_biopsies(BiopsyStatus.ONE, Race.HISPANIC_AMERICAN_US) == 1
+        assert recode_number_of_biopsies(BiopsyStatus.MULTIPLE, Race.HISPANIC_AMERICAN_US) == 1
         assert recode_number_of_biopsies(BiopsyStatus.MULTIPLE, Race.WHITE) == 2
 
     def test_recode_age_at_menarche(self) -> None:
@@ -158,45 +149,29 @@ class TestRecodings:
 
     def test_relative_risk_factor(self):
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.NONE, HyperplasiaStatus.UNKNOWN, Race.WHITE
-            )
+            hyperplasia_relative_risk(BiopsyStatus.NONE, HyperplasiaStatus.UNKNOWN, Race.WHITE)
             == 1.0
         )
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.ONE, HyperplasiaStatus.NONE, Race.WHITE
-            )
-            == 0.93
+            hyperplasia_relative_risk(BiopsyStatus.ONE, HyperplasiaStatus.NONE, Race.WHITE) == 0.93
         )
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.ONE, HyperplasiaStatus.SOME, Race.WHITE
-            )
-            == 1.82
+            hyperplasia_relative_risk(BiopsyStatus.ONE, HyperplasiaStatus.SOME, Race.WHITE) == 1.82
         )
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.ONE, HyperplasiaStatus.UNKNOWN, Race.WHITE
-            )
+            hyperplasia_relative_risk(BiopsyStatus.ONE, HyperplasiaStatus.UNKNOWN, Race.WHITE)
             == 1.0
         )
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.MULTIPLE, HyperplasiaStatus.NONE, Race.WHITE
-            )
+            hyperplasia_relative_risk(BiopsyStatus.MULTIPLE, HyperplasiaStatus.NONE, Race.WHITE)
             == 0.93
         )
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.MULTIPLE, HyperplasiaStatus.SOME, Race.WHITE
-            )
+            hyperplasia_relative_risk(BiopsyStatus.MULTIPLE, HyperplasiaStatus.SOME, Race.WHITE)
             == 1.82
         )
         assert (
-            hyperplasia_relative_risk(
-                BiopsyStatus.MULTIPLE, HyperplasiaStatus.UNKNOWN, Race.WHITE
-            )
+            hyperplasia_relative_risk(BiopsyStatus.MULTIPLE, HyperplasiaStatus.UNKNOWN, Race.WHITE)
             == 1.0
         )
         assert (

@@ -19,9 +19,7 @@ class PredictionError(Exception):
 class Prediction:
     """Stores risk model predictions from start age + 1 year"""
 
-    def __init__(
-        self, formulation: MhtFormulation, start_age: int, values: list[float]
-    ) -> None:
+    def __init__(self, formulation: MhtFormulation, start_age: int, values: list[float]) -> None:
         self.formulation = formulation
         self.start_age = start_age
         self.values = values
@@ -48,9 +46,7 @@ class RiskModel(metaclass=abc.ABCMeta):
         pass
 
     def predict_all(self) -> dict[MhtFormulation, Prediction]:
-        return {
-            formulation: self.predict(formulation) for formulation in MhtFormulation
-        }
+        return {formulation: self.predict(formulation) for formulation in MhtFormulation}
 
 
 class Model(metaclass=abc.ABCMeta):
@@ -91,12 +87,8 @@ class CanRiskModel(Model):
             username=settings.CANRISK_API_USERNAME,
             password=settings.CANRISK_API_PASSWORD,
         )
-        self.results_no_mht = extract_cancer_rates(
-            api.boadicea(str(canrisk_file_no_mht))
-        )
-        self.results_with_mht = extract_cancer_rates(
-            api.boadicea(str(canrisk_file_with_mht))
-        )
+        self.results_no_mht = extract_cancer_rates(api.boadicea(str(canrisk_file_no_mht)))
+        self.results_with_mht = extract_cancer_rates(api.boadicea(str(canrisk_file_with_mht)))
 
     def background_risk(self, years: int):
         return self.results_no_mht["individual"][4]

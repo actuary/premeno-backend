@@ -154,15 +154,12 @@ class PedigreeEntry:
             False,
             "mum",
             sex=Sex.Female,
-            age=age_at_diagnosis
-            or 0,  # this is clearly an underestimate - more prudent
+            age=age_at_diagnosis or 0,  # this is clearly an underestimate - more prudent
             year_of_birth=date.today().year - (age_at_diagnosis or date.today().year),
             diagnoses=Diagnoses(breast_cancer_1st_age=age_at_diagnosis or 0),
         )
 
-    def sister_with_cancer(
-        self, sister_no: int, age_at_diagnosis: int
-    ) -> "PedigreeEntry":
+    def sister_with_cancer(self, sister_no: int, age_at_diagnosis: int) -> "PedigreeEntry":
         """Returns a sister entry with cancer at given age. Sets her age
         to age at diagnosis. This understates the risk we are only
         giving her one cancer, and by saying she is at the age of diagnosis
@@ -185,10 +182,7 @@ class PedigreeEntry:
 
     def calculate_sisters(self, sisters_ages_at_diagnosis) -> list["PedigreeEntry"]:
         """ """
-        return [
-            self.sister_with_cancer(i, age)
-            for i, age in enumerate(sisters_ages_at_diagnosis)
-        ]
+        return [self.sister_with_cancer(i, age) for i, age in enumerate(sisters_ages_at_diagnosis)]
 
     def child(self, age_at_first_live_birth: int, child_no: int) -> "PedigreeEntry":
         return PedigreeEntry(
@@ -202,12 +196,9 @@ class PedigreeEntry:
             mother_id=self.individ_id,
         )
 
-    def children(
-        self, age_at_first_live_birth: int, no_of_children: int
-    ) -> list["PedigreeEntry"]:
+    def children(self, age_at_first_live_birth: int, no_of_children: int) -> list["PedigreeEntry"]:
         return [
-            self.child(age_at_first_live_birth, child_no)
-            for child_no in range(no_of_children)
+            self.child(age_at_first_live_birth, child_no) for child_no in range(no_of_children)
         ]
 
     def __str__(self) -> str:

@@ -8,9 +8,7 @@ def extract_cancer_rates(boadicea: dict) -> dict:
         return list(map(lambda rate: rate["breast cancer risk"]["decimal"], rates_list))
 
     return {
-        "age": list(
-            map(lambda rate: rate["age"], pedigree_results["baseline_cancer_risks"])
-        ),
+        "age": list(map(lambda rate: rate["age"], pedigree_results["baseline_cancer_risks"])),
         "baseline": extract(pedigree_results["baseline_cancer_risks"]),
         "individual": extract(pedigree_results["cancer_risks"]),
     }
