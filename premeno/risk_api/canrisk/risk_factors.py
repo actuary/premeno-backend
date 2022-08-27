@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
+from typing import Optional
 
 from premeno.risk_api.canrisk.utils import header_line
 
@@ -33,7 +34,7 @@ class MhtStatus(Enum):
 class RiskFactors:
     age_at_menarche: int
     number_of_children: int
-    age_at_first_live_birth: int
+    age_at_first_live_birth: Optional[int]
     oral_contraceptive_use: OralContraceptiveData
     mht_use: MhtStatus
     height_cm: int
@@ -42,10 +43,16 @@ class RiskFactors:
     age_at_menopause: int
 
     def _first_live_birth_header(self) -> str:
-        if self.number_of_children == 0:
+        if self.age_at_first_live_birth is None:
             return ""
 
         return f"{header_line('First_live_birth', self.age_at_first_live_birth)}\n"
+
+    def _parity_header(self) -> str:
+        if self.age_at_first_live_birth is None:
+            return ""
+
+        return f"{header_line('parity', self.number_of_children)}\n"
 
     def _age_at_menopause_header(self) -> str:
         if self.age_at_menopause == 0:
@@ -55,7 +62,7 @@ class RiskFactors:
     def make_header(self) -> str:
         return (
             f"{header_line('menarche', self.age_at_menarche)}\n"
-            f"{header_line('parity', self.number_of_children)}\n"
+            f"{self._parity_header()}"
             f"{self._first_live_birth_header()}"
             f"{header_line('oc_use', self.oral_contraceptive_use)}\n"
             f"{header_line('mht_use', self.mht_use.value)}\n"

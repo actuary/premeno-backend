@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+from datetime import date
 from enum import Enum
+from typing import Optional
 
 
 class Sex(Enum):
@@ -73,6 +75,7 @@ class GeneTestType(Enum):
     Direct = "T"
 
 
+@dataclass
 class GeneTest:
     """CanRisk GeneTest for patient"""
 
@@ -115,7 +118,6 @@ class GeneTests:
 class PedigreeEntry:
     """Represents an entry in the pedigree file"""
 
-    fam_id: str
     individ_id: str
     is_target: bool
 
@@ -141,8 +143,21 @@ class PedigreeEntry:
         return 0 if self.age_on_death == 0 else 1
 
     def husband(self) -> "PedigreeEntry":
+        return PedigreeEntry("husb", False, "NA", Sex.Male, age=0, year_of_birth=0)
+
+    def father(self) -> "PedigreeEntry":
+        return PedigreeEntry("dad", False, "dad", Sex.Male, 0, 0)
+
+    def mother(self, age_at_diagnosis: Optional[int] = None) -> "PedigreeEntry":
         return PedigreeEntry(
-            self.fam_id, "husb", False, "NA", Sex.Male, age=0, year_of_birth=0
+            "mum",
+            False,
+            "mum",
+            sex=Sex.Female,
+            age=age_at_diagnosis
+            or 0,  # this is clearly an underestimate - more prudent
+            year_of_birth=date.today().year - (age_at_diagnosis or date.today().year),
+            diagnoses=Diagnoses(breast_cancer_1st_age=age_at_diagnosis or 0),
         )
 
     def sister_with_cancer(
@@ -157,7 +172,6 @@ class PedigreeEntry:
         is understating the risk, but we're hoping by not too much.
         """
         return PedigreeEntry(
-            self.fam_id,
             f"sis{sister_no}",
             False,
             "NA",
@@ -169,9 +183,15 @@ class PedigreeEntry:
             diagnoses=Diagnoses(age_at_diagnosis),
         )
 
+    def calculate_sisters(self, sisters_ages_at_diagnosis) -> list["PedigreeEntry"]:
+        """ """
+        return [
+            self.sister_with_cancer(i, age)
+            for i, age in enumerate(sisters_ages_at_diagnosis)
+        ]
+
     def child(self, age_at_first_live_birth: int, child_no: int) -> "PedigreeEntry":
         return PedigreeEntry(
-            fam_id=self.fam_id,
             individ_id=f"ch{child_no}",
             is_target=False,
             name="NA",
@@ -192,7 +212,7 @@ class PedigreeEntry:
 
     def __str__(self) -> str:
         return (
-            f"{self.fam_id}\t"
+            f"fam\t"
             f"{self.name}\t"
             f"{1 if self.is_target else 0}\t"
             f"{self.individ_id}\t"

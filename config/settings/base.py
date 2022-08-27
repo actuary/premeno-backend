@@ -62,8 +62,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 # API KEYS
 # -----------------------------------------------------------------------------
 #
+CANRISK_API_TOKEN = env.str("CANRISK_API_TOKEN", "")
 CANRISK_API_USERNAME = env.str("CANRISK_API_USERNAME", "")
 CANRISK_API_PASSWORD = env.str("CANRISK_API_PASSWORD", "")
+CANRISK_API_CACHE = env.str("CANRISK_API_CACHE", True)
+CANRISK_API_CACHE_DAYS = env.str("CANRISK_API_CACHE_DAYS", 7)
 # APPS
 # -----------------------------------------------------------------------------
 WKHTMLTOPDF = env.str("WKHTMLTOPDF", "/usr/bin/wkhtmltopdf")

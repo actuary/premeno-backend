@@ -18,6 +18,6 @@ def extract_cancer_rates(boadicea: dict) -> dict:
 
 def header_line(name: str, value: Optional[Any]) -> str:
     if value is not None:
-        return f"##{name}={value}"
+        return f"##{name}={str(value)}"
     else:
         return f"##{name}"
