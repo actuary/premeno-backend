@@ -1,4 +1,7 @@
-from premeno.risk_api.canrisk.risk_factors import OralContraceptiveData, OralContraStatus
+from premeno.risk_api.canrisk.risk_factors import (
+    OralContraceptiveData,
+    OralContraStatus,
+)
 
 
 class TestRiskFactors:

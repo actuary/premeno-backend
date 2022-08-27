@@ -2,7 +2,11 @@ from typing import Optional
 
 from premeno.risk_api.gail.errors import FactorError, RecodingError
 from premeno.risk_api.gail.race import ASIANS, ETHNIC_GROUP_TO_RACE, HISPANICS, Race
-from premeno.risk_api.questionnaire import BiopsyStatus, HyperplasiaStatus, Questionnaire
+from premeno.risk_api.questionnaire import (
+    BiopsyStatus,
+    HyperplasiaStatus,
+    Questionnaire,
+)
 
 _MIN_AGE = 25  # BCRAT mention 35 but use 25 in their package. Instead, we'll use 25
 _MAX_AGE = 80
