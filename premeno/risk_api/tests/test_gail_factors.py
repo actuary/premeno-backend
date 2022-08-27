@@ -10,7 +10,11 @@ from premeno.risk_api.gail.factors import (
     recode_number_of_relatives,
 )
 from premeno.risk_api.gail.race import Race
-from premeno.risk_api.questionnaire import BiopsyStatus, HyperplasiaStatus, Questionnaire
+from premeno.risk_api.questionnaire import (
+    BiopsyStatus,
+    HyperplasiaStatus,
+    Questionnaire,
+)
 
 
 class TestGailFactors:
