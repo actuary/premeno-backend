@@ -73,5 +73,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements/local.txt
 
+      - name: Install wkhtmltopdf
+        run: sudo apt-get install -y wkhtmltopdf
+
       - name: Test with pytest
         run:  pytest
