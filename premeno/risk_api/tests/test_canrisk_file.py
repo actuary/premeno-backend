@@ -2,11 +2,7 @@ from unittest.mock import patch
 
 from premeno.risk_api.canrisk.file import CanRiskFile, create_canrisk_file, make_family
 from premeno.risk_api.canrisk.pedigree import PedigreeEntry, Sex
-from premeno.risk_api.canrisk.risk_factors import (
-    MhtStatus,
-    OralContraceptiveData,
-    RiskFactors,
-)
+from premeno.risk_api.canrisk.risk_factors import MhtStatus, OralContraceptiveData, RiskFactors
 from premeno.risk_api.canrisk.utils import header_line
 from premeno.risk_api.questionnaire import Questionnaire
 
