@@ -5,7 +5,7 @@ __pycache__/
 *$py.class
 
 # Requests cache
-*.sqlite
+canrisk_cache.sqlite
 
 # C extensions
 *.so
