@@ -112,30 +112,44 @@ table.Questionnaire {
     color:teal
 }
 
+.Intro {
+  background-color: #04948C;
+  font-family:Roboto;
+  color:white;
+  line-height:normal;
+}
+
 </style>
 </head>
 <body>
 
-<div class=WordSection1>
-<table style='border-collapse:collapse;border:none'>
- <tr style='height:52.7pt'>
-  <td style='width:134.2pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
-    <h1 style='line-height:normal;font-family:Roboto;color:#04948C'>MAsCot</h1>
-  </td>
-  <td style='width:205.5pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
-    <h1 style='text-align:center;line-height:normal;font-family:Roboto;color:#04948C'><b>Risk Report</b></h1>
-  </td>
-  <td style='width:7.0cm;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
-    <h1 style='text-align:right;line-height:normal;font-family:Roboto;color:#04948C'><b>Report Date:</b> {% now "d/m/Y" %}<b></b></h1>
-  </td>
- </tr>
-</table>
+<div style='border:solid #04948C 1.0pt;padding:3pt'>
+<div class='Intro'>
+  <table style='border-collapse:collapse;border:none'>
+   <tr style='height:52.7pt'>
+    <td style='width:134.2pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
+      <h1 style='color:white'>MASCOT</h1>
+    </td>
+    <td style='width:205.5pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
+      <h1 style='text-align:center;color:white'><b>Risk Report</b></h1>
+    </td>
+    <td style='width:12.0cm;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
+      <h1 style='text-align:right;color:white'><b>Report Date:</b> {% now "d/m/Y" %}<b></b></h1>
+    </td>
+   </tr>
+  </table>
+</div>
+<h1 class='SectionHeader'><b>What is this tool?</b></h1>
+<p class='Break'><span>&nbsp;</span></p>
+<p class='Explanation'>
+Mascot has been built to communicate the risks and benefits of taking menopausal hormone therapy (MHT), also known as hormone replacement therapy (HRT). It's aimed at women who are experiencing menopausal symptoms and are considering their options.
+</p>
+<p
+class='Horiz'>______________________________________________________________________________________________________________________________________</p>
 
-<p class='Horiz'>____________________________________________________________________________________________________________________________</p>
+<h1 class='SectionHeader'><b> Questionnaire Results</b></h1>
 
-<h1 class='SectionHeader'><b>Questionnaire Results</b></h1>
-
-<table class='Questionnaire'>
+<table class='Questionnaire' align="center">
  <tr>
   <td class='Header First'><p><b>Question</b></p></td>
   <td class='Header Second'><p><b>Answer</b></p></td>
@@ -155,26 +169,38 @@ table.Questionnaire {
   <td class='Section Second'><p><b> </b></p></td>
  </tr>
  {% for entry in repro %}
- <tr>
-  <td class='Cell First'><p><b>{{entry.question}}</b></p></td>
-  <td class='Cell Second'><p>{{entry.answer}}</p></td>
- </tr>
+   {% if entry.answer %}
+     <tr>
+      <td class='Cell First'><p><b>{{entry.question}}</b></p></td>
+      <td class='Cell Second'><p>{{entry.answer}}</p></td>
+     </tr>
+   {% endif %}
  {% endfor %}
  <tr>
   <td class='Section First'><p><b>Breast Cancer Risk</b></p></td>
   <td class='Section Second'><p><b> </b></p></td>
  </tr>
  {% for entry in bcrisk %}
- <tr>
-  <td class='Cell First'><p><b>{{entry.question}}</b></p></td>
-  <td class='Cell Second'><p>{{entry.answer}}</p></td>
- </tr>
+   {% if entry.answer %}
+     <tr>
+      <td class='Cell First'><p><b>{{entry.question}}</b></p></td>
+      <td class='Cell Second'><p>{{entry.answer}}</p></td>
+     </tr>
+   {% endif %}
  {% endfor %}
 </table>
-<p class='Horiz'>____________________________________________________________________________________________________________________________</p>
-<h1 class='SectionHeader'><b>Risk Results</b> - Breast Cancer</h1>
-<p class='Break'><span>&nbsp;</span></p>
-<table class='ResultTable'>
+<p
+class='Horiz'>______________________________________________________________________________________________________________________________________</p>
+<h1 class='SectionHeader'><b> Risk Results</b> - Breast Cancer</h1>
+<p class='Explanation'>
+ Please note, the additional breast cancer risk for MHT relies heavily on the Million Women Study, which
+ is an observational study.
+ The background risk might not take into account several factors, such as Ashkenazi heritage or other genetic factors.
+
+ For more detail, go to
+ <a href='https://www.premeno-frontend.herokuapp.com'>https://www.premeno-frontend.herokuapp.com</a>.
+</p>
+<table class='ResultTable' align="center">
  <tr class='ResultHeader'>
   <td><p><b>5-year background risk</b></p></td>
   <td><p><b>5-year risk with MHT use</b></p></td>
@@ -196,6 +222,7 @@ without MHT.</li>
   <li><b>{{cancer_with_mht}}</b> more are likely to be diagnosed with breast cancer due to
 MHT.</li>
 </ul>
+</p>
 </div>
 </body>
 </html>

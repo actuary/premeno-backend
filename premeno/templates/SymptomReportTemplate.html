@@ -112,50 +112,79 @@ table.Questionnaire {
     color:teal
 }
 
+.Intro {
+  background-color: #04948C;
+  font-family:Roboto;
+  color:white;
+  line-height:normal;
+}
+
 </style>
 </head>
 <body>
 
-<div class=WordSection1>
-<table style='border-collapse:collapse;border:none'>
- <tr style='height:52.7pt'>
-  <td style='width:134.2pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
-    <h1 style='line-height:normal;font-family:Roboto;color:#04948C'>MAsCot</h1>
-  </td>
-  <td style='width:205.5pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
-    <h1 style='text-align:center;line-height:normal;font-family:Roboto;color:#04948C'><b>Symptom Questionnaire</b></h1>
-  </td>
-  <td style='width:7.0cm;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
-    <h1 style='text-align:right;line-height:normal;font-family:Roboto;color:#04948C'><b>Report Date:</b> {% now "d/m/Y" %}<b></b></h1>
-  </td>
- </tr>
-</table>
+<div style='border:solid #04948C 1.0pt;padding:3pt'>
+<div class='Intro'>
+  <table style='border-collapse:collapse;border:none'>
+   <tr style='height:52.7pt'>
+    <td style='width:134.2pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
+      <h1 style='color:white'>MASCOT</h1>
+    </td>
+    <td style='width:205.5pt;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
+      <h1 style='text-align:center;color:white'><b>Risk Report</b></h1>
+    </td>
+    <td style='width:12.0cm;padding:0cm 5.4pt 0cm 5.4pt;height:52.7pt'>
+      <h1 style='text-align:right;color:white'><b>Report Date:</b> {% now "d/m/Y" %}<b></b></h1>
+    </td>
+   </tr>
+  </table>
+</div>
+<h1 class='SectionHeader'><b>What is this?</b></h1>
+<p class='Break'><span>&nbsp;</span></p>
+<p class='Explanation'>
+This questionnaire will assess your menopausal symptoms and give you a score. The results can be discussed with your GP
+to see if Menopausal Hormone Therapy is right for you. It is based on the Greene Climacteric Scale [1]. Studies show
+that women that are menopausal have a score of 12 or higher [2]. Below are your answers with their corresponding scores.
 
-<p class='Horiz'>____________________________________________________________________________________________________________________________</p>
+<p
+class='Horiz'>______________________________________________________________________________________________________________________________________</p>
 
 <h1 class='SectionHeader'><b>Symptom Questionnaire</b></h1>
 
-<table class='Questionnaire'>
+<table class='Questionnaire' align='center'>
  <tr>
   <td class='Header First'><p><b>Symptom</b></p></td>
   <td class='Header Second'><p><b>Rating</b></p></td>
+  <td class='Header Second'><p><b>Category</b></p></td>
   <td class='Header Second'><p><b>Score</b></p></td>
  </tr>
  {% for entry in symptoms %}
  <tr>
   <td class='Cell First'><p><b>{{entry.title}}</b></p></td>
   <td class='Cell Second'><p>{{entry.rating}}</p></td>
+  <td class='Cell Second'><p>{{entry.scale}}</p></td>
   <td class='Cell Second'><p>{{entry.value}}</p></td>
  </tr>
  {% endfor %}
  <tr class='Section'>
   <td class='First'><p><b>Total</b></p></td>
   <td class='Second'><p></p></td>
+  <td class='Second'><p></p></td>
   <td class='Second'><p> {{total}}</p></td>
  </tr>
 </table>
 
-<p class='Horiz'>____________________________________________________________________________________________________________________________</p>
+<p
+class='Horiz'>______________________________________________________________________________________________________________________________________</p>
+<h1 class='SectionHeader'><b>References</b></h1>
+<p class='Explanation'>
+[1] <i>Greene. (2008). Constructing a standard climacteric scale. Maturitas, 61(1), 78–84.
+  https://doi.org/10.1016/j.maturitas.2008.09.011</i>
+</p>
+<p class='Explanation'>
+[2] <i>Kapur, P. , Sinha, B. & Pereira, B. M. (2009). Measuring climacteric symptoms and age at natural menopause in an Indian population
+  using the Greene Climacteric Scale. Menopause, 16 (2), 378-384. https://doi.org/10.1097/gme.0b013e31818a2be9.</i>
+</p>
 </div>
 </body>
 </html>
