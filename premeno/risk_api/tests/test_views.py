@@ -1,5 +1,5 @@
 import json
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -25,18 +25,16 @@ class TestView:
         "sisters_ages_at_diagnosis": [],
     }
 
-    @patch("premeno.risk_api.views.CanRiskModel")
+    @patch("premeno.risk_api.views.risk_predictions")
     @pytest.mark.django_db
     def test_bc_risk_view(self, mock, client) -> None:
-        instance = MagicMock()
-        instance.background_risk.return_value = 0.1
-        instance.relative_risk.return_value = 0.2
-        mock.return_value = instance
+        mock.return_value = {"breast_cancer": {"none": 0.1, "e": 0.2, "e+p": 0.3}}
 
         response = client.post(
             "/api/risk/", data=json.dumps(self.data), content_type="application/json"
         )
 
         assert response.status_code == 200
-        assert response.data["baseline_risk"] == 0.1
-        assert response.data["relative_risk"] == 0.2
+        assert response.data["breast_cancer"]["none"] == 0.1
+        assert response.data["breast_cancer"]["e"] == 0.2
+        assert response.data["breast_cancer"]["e+p"] == 0.3

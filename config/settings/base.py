@@ -97,7 +97,7 @@ THIRD_PARTY_APPS = [
 LOCAL_APPS = [
     "premeno.users",
     # Your stuff: custom apps go here
-    "premeno.risk_api.apps.BreastCancerConfig",
+    "premeno.risk_api.apps.RiskAPIConfig",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

@@ -28,7 +28,7 @@ class OralContraceptiveUse(Enum):
     EVER = "y"
 
 
-class MhtFormulation(Enum):
+class MhtType(Enum):
     NONE = "none"
     OESTROGEN = "e"
     COMBINED = "e+p"
@@ -62,7 +62,7 @@ class Questionnaire(BaseModel):
     education: EducationLevel
     alcohol_use: float
     smoking: SmokingUse
-    mht: MhtFormulation
+    mht: MhtType
     age_at_menarche: int
     nulliparous: bool  # No children
     age_at_first_child: Optional[int]  # None means unknown

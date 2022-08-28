@@ -2,25 +2,20 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 
 from premeno.risk_api.questionnaire import Questionnaire
-from premeno.risk_api.risk import CanRiskModel
+from premeno.risk_api.risk import risk_predictions
 
 
-class BreastCancerRiskViewSet(viewsets.ViewSet):
-    """Calculates the breast cancer risk based on parameters"""
+class RiskPredictionsViewSet(viewsets.ViewSet):
+    """API endpoint for risk predictions"""
 
     authentication_classes = []
     permission_classes = []
 
     def create(self, request):
-        """Return breast cancer"""
+        """
+        Posting to this with questionnaire data returns the risk predictions for this
+        data
+        """
 
         data = Questionnaire(**request.data)
-        model = CanRiskModel(data)
-
-        PROJ_YEARS = 5
-        return Response(
-            {
-                "baseline_risk": model.background_risk(PROJ_YEARS),
-                "relative_risk": model.relative_risk(PROJ_YEARS),
-            }
-        )
+        return Response(risk_predictions(data, 5))

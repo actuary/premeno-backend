@@ -26,7 +26,7 @@ class MutationFreqSource(Enum):
 BASE_URL = "https://www.canrisk.org"
 
 
-class CanRisk:
+class CanRiskAPI:
     def __init__(self, username: str, password: str) -> None:
         if settings.CANRISK_API_CACHE:
             self.session = requests_cache.CachedSession(

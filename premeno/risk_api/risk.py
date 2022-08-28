@@ -1,97 +1,126 @@
 import abc
+from enum import Enum
+from typing import Optional
 
 from django.conf import settings
 
-from premeno.risk_api.canrisk.api import CanRisk
+from premeno.risk_api.canrisk.api import CanRiskAPI
 from premeno.risk_api.canrisk.file import create_canrisk_file
 from premeno.risk_api.canrisk.risk_factors import MhtStatus
-from premeno.risk_api.canrisk.utils import extract_cancer_rates
+from premeno.risk_api.canrisk.utils import extract_cancer_rates, interpolate_rate
 from premeno.risk_api.gail.factors import GailFactors
 from premeno.risk_api.gail.mht import collab_relative_risk
 from premeno.risk_api.gail.model import GailModel
-from premeno.risk_api.questionnaire import MhtFormulation, Questionnaire
+from premeno.risk_api.questionnaire import MhtType, Questionnaire
 
 
 class PredictionError(Exception):
     """Thrown when something unexpected happens with predictions"""
 
 
-class Prediction:
-    """Stores risk model predictions from start age + 1 year"""
+class Risk(Enum):
+    """Types of risk predictions produced by the API"""
 
-    def __init__(self, formulation: MhtFormulation, start_age: int, values: list[float]) -> None:
-        self.formulation = formulation
-        self.start_age = start_age
-        self.values = values
-
-    def at_age(self, age: int) -> float:
-        if age == self.start_age:
-            return 0
-
-        if self.start_age > age or age > 80:
-            raise PredictionError("Prediction age out of range.")
-
-        if age - self.start_age > len(self.values):
-            raise PredictionError("Can't predict out that far.")
-
-        return self.values[age - self.start_age - 1]
+    BREAST_CANCER = "breast_cancer"
+    FRACTURE_RISK = "fracture_risk"
+    VTE = "venous_thromboembolism"
+    CVD = "cvd"
 
 
-class RiskModel(metaclass=abc.ABCMeta):
-    def __init__(self, data: Questionnaire) -> None:
-        self.data = data
-
-    @abc.abstractmethod
-    def predict(self, formulation: MhtFormulation) -> Prediction:
-        pass
-
-    def predict_all(self) -> dict[MhtFormulation, Prediction]:
-        return {formulation: self.predict(formulation) for formulation in MhtFormulation}
-
-
-class Model(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def background_risk(self, years: int):
-        pass
-
-    @abc.abstractmethod
-    def relative_risk(self, years: int):
-        pass
-
-
-class BreastCancer(Model):
-    def __init__(self, data: Questionnaire):
-        self.gail = GailModel(GailFactors.from_questionnaire(data))
-        self.mht = collab_relative_risk(data.mht)
-
-    def background_risk(self, years: int):
-        return self.gail.predict(years)
-
-    def relative_risk(self, years: int):
-        return self.mht
-
+RISK_TO_NICE_NAME = {
+    Risk.BREAST_CANCER: "Breast Cancer Risk",
+    Risk.FRACTURE_RISK: "Fracture Risk",
+    Risk.VTE: "Venous Thromboembolism Risk",
+    Risk.CVD: "Cardiovascular Risk",
+}
 
 MHT_TO_STATUS = {
-    MhtFormulation.NONE: MhtStatus.Never,
-    MhtFormulation.OESTROGEN: MhtStatus.Oestrogen,
-    MhtFormulation.COMBINED: MhtStatus.Combined,
+    MhtType.NONE: MhtStatus.Never,
+    MhtType.OESTROGEN: MhtStatus.Oestrogen,
+    MhtType.COMBINED: MhtStatus.Combined,
 }
 
 
-class CanRiskModel(Model):
-    def __init__(self, data: Questionnaire):
-        canrisk_file_no_mht = create_canrisk_file(data, MhtStatus.Never)
-        canrisk_file_with_mht = create_canrisk_file(data, MHT_TO_STATUS[data.mht])
+class RiskCalc(metaclass=abc.ABCMeta):
+    """Abstract RiskCalc class - subclass to define an adapter that the API will use"""
 
-        api = CanRisk(
-            username=settings.CANRISK_API_USERNAME,
-            password=settings.CANRISK_API_PASSWORD,
-        )
-        self.results_no_mht = extract_cancer_rates(api.boadicea(str(canrisk_file_no_mht)))
-        self.results_with_mht = extract_cancer_rates(api.boadicea(str(canrisk_file_with_mht)))
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def risk(cls) -> Risk:
+        pass  # pragma: no cover
 
-    def background_risk(self, years: int):
-        return self.results_no_mht["individual"][4]
+    @property
+    @classmethod
+    @abc.abstractmethod
+    def name(cls) -> str:
+        pass  # pragma: no cover
 
-    def relative_risk(self, years: int):
-        return self.results_with_mht["individual"][4] / self.background_risk(5)
+    @abc.abstractmethod
+    def predict_mht_type(self, data: Questionnaire, proj_years: int, mht_type: MhtType) -> float:
+        pass  # pragma: no cover
+
+    def predict(self, data: Questionnaire, proj_years: int) -> dict[MhtType, Optional[float]]:
+        results = {}
+        for mht_type in MhtType:
+            try:
+                results.update({mht_type.value: self.predict_mht_type(data, proj_years, mht_type)})
+            except Exception as err:
+                results.update({mht_type.value: None})
+                print(f"Prediction Error for {self.name} model: {err}")
+
+        return results
+
+
+class CanRiskCalc(RiskCalc):
+    """Adapter for CanRisk API model"""
+
+    risk: Risk = Risk.BREAST_CANCER
+    name: str = "CanRisk"
+
+    def predict_mht_type(self, data: Questionnaire, proj_years: int, mht_type: MhtType) -> float:
+        api = CanRiskAPI(settings.CANRISK_API_USERNAME, settings.CANRISK_API_PASSWORD)
+        canrisk_file = create_canrisk_file(data, MHT_TO_STATUS[mht_type])
+        rates = extract_cancer_rates(api.boadicea(str(canrisk_file)))
+
+        return interpolate_rate(rates["age"], rates["individual"], int(data.age) + proj_years)
+
+
+class GailRiskCalc(RiskCalc):
+    """Adapter for Gail model"""
+
+    risk: Risk = Risk.BREAST_CANCER
+    name: str = "Gail"
+
+    def predict_mht_type(self, data: Questionnaire, proj_years: int, mht_type: MhtType) -> float:
+        gail = GailModel(GailFactors.from_questionnaire(data))
+        mht_rel_risk = collab_relative_risk(mht_type)
+        return gail.predict(proj_years) * mht_rel_risk
+
+
+class FakeCalc(RiskCalc):
+    """Fake calc for testing purposes"""
+
+    risk: Risk = Risk.BREAST_CANCER
+    name: str = "Fakeo"
+
+    def predict_mht_type(self, data: Questionnaire, proj_years: int, mht_type: MhtType) -> float:
+        return {
+            MhtType.NONE: 0.05,
+            MhtType.OESTROGEN: 0.04,
+            MhtType.COMBINED: 0.04,
+        }[mht_type]
+
+
+def risk_predictions(data: Questionnaire, proj_years: int) -> dict:
+    """Makes all risk predictions based on the questionnaire data"""
+    models = {
+        Risk.BREAST_CANCER: CanRiskCalc,
+    }
+
+    results = {}
+    for risk in models:
+        model = models[risk]()
+        results[risk.value] = model.predict(data, proj_years)
+
+    return results

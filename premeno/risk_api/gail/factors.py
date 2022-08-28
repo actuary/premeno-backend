@@ -9,6 +9,10 @@ _MAX_AGE = 80
 
 
 class GailFactors:
+    """These are the factors used in the logistic regression model
+    Generally labelled from 0 to 3 (though add in race and age)
+    """
+
     def __init__(
         self,
         age: float,

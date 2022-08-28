@@ -2,7 +2,7 @@ from django.conf import settings
 from pytest import raises
 from requests_mock import Mocker
 
-from premeno.risk_api.canrisk.api import CanRisk, CanRiskAPIError
+from premeno.risk_api.canrisk.api import CanRiskAPI, CanRiskAPIError
 
 
 class TestCanRiskAPI:
@@ -23,13 +23,13 @@ class TestCanRiskAPI:
                 json={"token": "notarealtoken"},
             )
             settings.CANRISK_API_TOKEN = ""
-            canrisk = CanRisk("dv21", "password123")
+            canrisk = CanRiskAPI("dv21", "password123")
             assert canrisk.user_id == "dv21"
             assert canrisk.api_key == "notarealtoken"
             assert canrisk.session.headers["Authorization"] == "token notarealtoken"
 
             settings.CANRISK_API_TOKEN = "abc"
-            canrisk = CanRisk("dv21", "password123")
+            canrisk = CanRiskAPI("dv21", "password123")
             assert canrisk.api_key == settings.CANRISK_API_TOKEN
 
     def test_no_token_response(self) -> None:
@@ -43,7 +43,7 @@ class TestCanRiskAPI:
                     json={"bloken": "notarealtoken"},
                 )
 
-                CanRisk("dv21", "password123")
+                CanRiskAPI("dv21", "password123")
 
         settings.CANRISK_API_TOKEN = tmp
 
@@ -57,7 +57,7 @@ class TestCanRiskAPI:
                     status_code=400,
                     json={"token": "notarealtoken"},
                 )
-                CanRisk("dv21", "password123")
+                CanRiskAPI("dv21", "password123")
 
         settings.CANRISK_API_TOKEN = tmp
 
@@ -73,7 +73,7 @@ class TestCanRiskAPI:
                 status_code=200,
                 json={"test": "TEST"},
             )
-            canrisk = CanRisk("dv21", "password123")
+            canrisk = CanRiskAPI("dv21", "password123")
             assert canrisk.boadicea("fakepedigreedata") == {"test": "TEST"}
 
     def test_cached(self) -> None:
@@ -84,7 +84,7 @@ class TestCanRiskAPI:
                 status_code=200,
                 json={"token": "notarealtoken"},
             )
-            canrisk = CanRisk("dv21", "password123")
+            canrisk = CanRiskAPI("dv21", "password123")
 
             mock.post(
                 "https://www.canrisk.org/boadicea/",

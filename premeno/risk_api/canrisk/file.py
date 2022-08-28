@@ -19,10 +19,17 @@ def make_family(
     mother_age_at_diagnosis: Optional[int],
     sisters_ages_at_diagnosis: list[int],
 ) -> list[PedigreeEntry]:
-    """ """
+    """Creates a family from the pedigree.
+    Always consists of pedigree + father + mother.
+    If they have children, just one is appended along with a "husband",
+    If sisters have been diagnosed with cancer, then add them
+    Note, this is prudent - having more sisters without cancer would reduce
+    breast cancer risk.
+    Note also, number of children is prudent, more children (without cancer)
+    would reduce risk
+    """
     family = [
         pedigree,
-        pedigree.husband(),
         pedigree.mother(mother_age_at_diagnosis),
         pedigree.father(),
     ]
@@ -30,12 +37,15 @@ def make_family(
     family.extend(pedigree.calculate_sisters(sisters_ages_at_diagnosis))
     if age_at_first_child is not None:
         family.append(pedigree.child(age_at_first_child, 1))
+        family.append(pedigree.husband())
 
     return family
 
 
 @dataclass
 class CanRiskFile:
+    """Representation of the can risk file that the API expects"""
+
     risk_factors: RiskFactors
     pedigrees: list[PedigreeEntry] = field(default_factory=list)
 
