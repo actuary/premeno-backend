@@ -100,7 +100,7 @@ Alternatively, if you want to use Docker. This requires docker and docker-compos
 Clone the repos
 ```
 git clone https://github.com/actuary/premeno-backend.git backend
-git clone https://github.com/actuary/premeno-backend.git frontend
+git clone https://github.com/actuary/premeno-frontend.git frontend
 ```
 
 #### docker-compose file
