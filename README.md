@@ -25,6 +25,30 @@ however, we hope to be able to do so in future versions.
 
 The tool is built using Django and Postgres with a responsive React front-end.
 
+## Folder Structure
+This project was initialised from Django Cookiecutter.
+-   .github - CI workflow set up by Django Cookiecutter with small edits
+-   compose - Docker files set up by Django Cookiecutter with small edits
+-   config - Django settings files (derived from Cookiecutter provided settings)
+-   docs - Django REST Framework + Cookiecutter provided docs
+-   locale
+-   premeno - main app directory
+    - contrib - boiler plate from Django/Cookiecutter
+    - static - skeleton JS/CSS from Cookiecutter
+    - risk_api - Mascot MHT Risk API endpoint
+    - symptoms - Mascot Symptom/Risk Report endpoint
+    - users - Django/Cookiecutter provided 
+    - templates - HTML templates (mostly provided by Django/Django REST framework)
+-  requirements
+-   utility - DjangoCookie cutter provided requirement files
+
+For avoidance of doubt, the code produced for the back end during the course of this project was:
+-   premeno/risk_api (sans Django boiler plate)
+-   premeno/symptoms (sans Django boiler plate)
+-   premeno/templates/RiskReportTemplate.html, premeno/templates/SymptomReportTemplate.html
+-   as well as minor modifications to settings, Docker, etc. files for deployment
+
+Other set-up code and boilerplate code has been produced by Django/Django cookiecutter.
 ### Acknowledgements
 This tool can make use of the CanRisk tool web-services ([canrisk.org](https://www.canrisk.org/about/)). The CanRisk tool is supported by grant PPRPGM-Nov20\100002 from
 Cancer Research UK. Citations are below:
@@ -33,7 +57,6 @@ Cancer Research UK. Citations are below:
 [2] Lee, Andrew et al. "BOADICEA: a comprehensive breast cancer risk prediction model incorporating genetic and
 nongenetic risk factors" Genetics in Medicine, Volume 21, Issue 8, 1708 - 1718
 [3] Archer S, Babb de Villiers C, Scheibl F, Carver T, Hartley S, et al. (2020) Evaluating clinician acceptability of the prototype CanRisk tool for predicting risk of breast and ovarian cancer: A multi-methods study. PLOS ONE 15(3): e0229999. https://doi.org/10.1371/journal.pone.0229999
-
 
 ## Deployment
 ### Dependencies
