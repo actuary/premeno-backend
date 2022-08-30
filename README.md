@@ -106,7 +106,7 @@ git clone https://github.com/actuary/premeno-frontend.git frontend
 #### docker-compose file
 
 Can use the following docker-compose file, saved as say, `local.yml` in the parent directory where backend/ and
-frontend/ are stored.
+frontend/ are stored. Note: This file is derived from the Cookiecutter django output.
 ```
 version: '3'
 
