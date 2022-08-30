@@ -37,7 +37,7 @@ This project was initialised from Django Cookiecutter.
     - static - skeleton JS/CSS from Cookiecutter
     - risk_api - Mascot MHT Risk API endpoint
     - symptoms - Mascot Symptom/Risk Report endpoint
-    - users - Django/Cookiecutter provided 
+    - users - Django/Cookiecutter provided
     - templates - HTML templates (mostly provided by Django/Django REST framework)
 -  requirements
 -   utility - DjangoCookie cutter provided requirement files
@@ -48,7 +48,8 @@ For avoidance of doubt, the code produced for the back end during the course of 
 -   premeno/templates/RiskReportTemplate.html, premeno/templates/SymptomReportTemplate.html
 -   as well as minor modifications to settings, Docker, etc. files for deployment
 
-Other set-up code and boilerplate code has been produced by Django/Django cookiecutter.
+Other set-up code and boilerplate code has been produced by Django/Django Cookiecutter.
+
 ### Acknowledgements
 This tool can make use of the CanRisk tool web-services ([canrisk.org](https://www.canrisk.org/about/)). The CanRisk tool is supported by grant PPRPGM-Nov20\100002 from
 Cancer Research UK. Citations are below:
