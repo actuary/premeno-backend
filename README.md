@@ -6,7 +6,6 @@ MHT Risk Assessment Tool
 [![Black code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
 [![Workflow Build](https://github.com/actuary/premeno-backend/actions/workflows/ci.yml/badge.svg)](https://github.com/actuary/premeno-backend/actions/workflows/ci.yml)
 ### About
-https://premeno-frontend.herokuapp.com/about
 
 MAsCoT has been built to communicate the risks and benefits of taking menopausal hormone therapy (MHT), also known as
 hormone replacement therapy (HRT). It's aimed at women who are experiencing menopausal symptoms and are considering
